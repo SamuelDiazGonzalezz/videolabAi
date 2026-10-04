@@ -1,0 +1,23 @@
+{
+  "chrome-pink": { "borderStyle": 1, "outlineWidth": 5.8, "shadowDepth": 5.2, "scaleX": 104, "scaleY": 106, "spacing": -0.25, "angle": 0, "blur": 0.3, "sizeMultiplier": 1.08, "xShadow": 3.8, "yShadow": 5.2, "material3d": true, "extrusionNear": "#9F286C", "extrusionFar": "#561038" },
+  "gum-pop": { "borderStyle": 1, "outlineWidth": 6.6, "shadowDepth": 5.8, "scaleX": 103, "scaleY": 108, "spacing": -0.5, "angle": -2, "blur": 0.22, "sizeMultiplier": 1.09, "xShadow": 4.2, "yShadow": 6.2, "material3d": true, "extrusionNear": "#C71978", "extrusionFar": "#701047" },
+  "pearl-gold": { "borderStyle": 1, "outlineWidth": 2.35, "shadowDepth": 5.5, "scaleX": 102, "scaleY": 104, "spacing": 0.1, "angle": -3, "blur": 0.28, "sizeMultiplier": 1.06, "xShadow": 5, "yShadow": 7, "material3d": true, "extrusionNear": "#B97718", "extrusionFar": "#69400D" },
+  "studio-wood": { "borderStyle": 1, "outlineWidth": 5.3, "shadowDepth": 5.6, "scaleX": 103, "scaleY": 103, "spacing": 0.35, "angle": 0, "blur": 0.24, "sizeMultiplier": 1.04, "xShadow": 4.6, "yShadow": 6.2, "material3d": true, "extrusionNear": "#75401F", "extrusionFar": "#3D2012" },
+  "beasty": { "borderStyle": 1, "outlineWidth": 5.2, "shadowDepth": 3, "scaleX": 104, "scaleY": 100, "spacing": 0.4, "angle": 0, "blur": 0.25, "sizeMultiplier": 1.02 },
+  "youshaei": { "borderStyle": 1, "outlineWidth": 3.4, "shadowDepth": 1.4, "scaleX": 100, "scaleY": 100, "spacing": 0.6, "angle": 0, "blur": 0.2, "sizeMultiplier": 0.94 },
+  "mozi": { "borderStyle": 1, "outlineWidth": 4.8, "shadowDepth": 3.2, "scaleX": 101, "scaleY": 104, "spacing": 0.2, "angle": 0, "blur": 0.3, "sizeMultiplier": 1.08 },
+  "glitch": { "borderStyle": 1, "outlineWidth": 3.8, "shadowDepth": 2.8, "scaleX": 100, "scaleY": 100, "spacing": -0.2, "angle": 0, "blur": 0.18, "sizeMultiplier": 0.94, "xShadow": 3, "yShadow": 1 },
+  "karaoke": { "borderStyle": 1, "outlineWidth": 4.6, "shadowDepth": 2.4, "scaleX": 100, "scaleY": 100, "spacing": 0, "angle": 0, "blur": 0.22, "sizeMultiplier": 1 },
+  "deep": { "borderStyle": 1, "outlineWidth": 3.1, "shadowDepth": 3.4, "scaleX": 100, "scaleY": 100, "spacing": 0.15, "angle": 0, "blur": 0.45, "sizeMultiplier": 0.92 },
+  "podp": { "borderStyle": 1, "outlineWidth": 4.2, "shadowDepth": 2.2, "scaleX": 88, "scaleY": 104, "spacing": 1.6, "angle": 0, "blur": 0.2, "sizeMultiplier": 1.04 },
+  "popline": { "borderStyle": 1, "outlineWidth": 4.8, "shadowDepth": 3.2, "scaleX": 101, "scaleY": 105, "spacing": -0.2, "angle": 0, "blur": 0.18, "sizeMultiplier": 1.06 },
+  "seamless": { "borderStyle": 1, "outlineWidth": 5.8, "shadowDepth": 3.6, "scaleX": 101, "scaleY": 101, "spacing": -0.4, "angle": 0, "blur": 0.25, "sizeMultiplier": 1.03 },
+  "think": { "borderStyle": 1, "outlineWidth": 3.8, "shadowDepth": 2.4, "scaleX": 103, "scaleY": 100, "spacing": 0.8, "angle": 0, "blur": 0.18, "sizeMultiplier": 0.94 },
+  "focus": { "borderStyle": 1, "outlineWidth": 4.6, "shadowDepth": 2.6, "scaleX": 100, "scaleY": 106, "spacing": 0, "angle": 0, "blur": 0.16, "sizeMultiplier": 1.08 },
+  "blur": { "borderStyle": 1, "outlineWidth": 2.2, "shadowDepth": 2.8, "scaleX": 100, "scaleY": 100, "spacing": 0.3, "angle": 0, "blur": 1.05, "sizeMultiplier": 0.94 },
+  "backdrop": { "borderStyle": 3, "outlineWidth": 10, "shadowDepth": 0, "scaleX": 100, "scaleY": 100, "spacing": 0.3, "angle": 0, "blur": 0.12, "sizeMultiplier": 0.93, "forceBox": true },
+  "soft": { "borderStyle": 1, "outlineWidth": 2.7, "shadowDepth": 2.5, "scaleX": 100, "scaleY": 100, "spacing": 0.2, "angle": 0, "blur": 0.55, "sizeMultiplier": 0.91 },
+  "baby": { "borderStyle": 1, "outlineWidth": 3.8, "shadowDepth": 2.4, "scaleX": 98, "scaleY": 101, "spacing": 0.4, "angle": 0, "blur": 0.22, "sizeMultiplier": 0.96 },
+  "grow": { "borderStyle": 1, "outlineWidth": 4.5, "shadowDepth": 3.4, "scaleX": 104, "scaleY": 108, "spacing": 0, "angle": 0, "blur": 0.28, "sizeMultiplier": 1.08 },
+  "breathe": { "borderStyle": 1, "outlineWidth": 5.1, "shadowDepth": 3.3, "scaleX": 102, "scaleY": 103, "spacing": 0.5, "angle": 0, "blur": 0.35, "sizeMultiplier": 1.02 }
+}

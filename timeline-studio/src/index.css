@@ -1,0 +1,5 @@
+* { box-sizing: border-box; }
+html, body, #root { width: 100%; min-width: 0; height: 100%; margin: 0; }
+html { color-scheme: dark; background: #07080b; }
+body { min-width: 320px; background: #07080b; }
+button, a, input, textarea, select { letter-spacing: 0; }

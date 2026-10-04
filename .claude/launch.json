@@ -1,0 +1,7 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "racingmonos-next", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev:next"], "port": 3000, "env": { "NODE_OPTIONS": "--use-system-ca" } },
+    { "name": "timeline-studio", "runtimeExecutable": "npm", "runtimeArgs": ["--prefix", "timeline-studio", "run", "dev"], "port": 5173 }
+  ]
+}

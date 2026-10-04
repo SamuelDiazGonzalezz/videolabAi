@@ -1,0 +1,138 @@
+/* Fuentes estáticas servidas por RacingMonos (public/assets/fonts/editor). El
+   exportador FFmpeg/libass usa estos mismos archivos para quemar los subtítulos. */
+
+@font-face {
+  font-family: "Vidreum Inter";
+  src: url("/assets/fonts/editor/inter-400.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Vidreum Inter";
+  src: url("/assets/fonts/editor/inter-600.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Vidreum Inter";
+  src: url("/assets/fonts/editor/inter-700.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Vidreum Inter";
+  src: url("/assets/fonts/editor/inter-800.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 800;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Vidreum Inter";
+  src: url("/assets/fonts/editor/inter-900.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 900;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Vidreum Anton";
+  src: url("/assets/fonts/editor/anton-400.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Vidreum Noto Serif";
+  src: url("/assets/fonts/editor/noto-serif-400.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Vidreum Noto Serif";
+  src: url("/assets/fonts/editor/noto-serif-700.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Vidreum Noto Serif";
+  src: url("/assets/fonts/editor/noto-serif-900.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 900;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Vidreum Roboto Mono";
+  src: url("/assets/fonts/editor/roboto-mono-400.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Vidreum Roboto Mono";
+  src: url("/assets/fonts/editor/roboto-mono-700.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Vidreum Nunito";
+  src: url("/assets/fonts/editor/nunito-400.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Vidreum Nunito";
+  src: url("/assets/fonts/editor/nunito-700.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Vidreum Nunito";
+  src: url("/assets/fonts/editor/nunito-900.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 900;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Vidreum Oswald";
+  src: url("/assets/fonts/editor/oswald-400.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Vidreum Oswald";
+  src: url("/assets/fonts/editor/oswald-700.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Vidreum Pacifico";
+  src: url("/assets/fonts/editor/pacifico-400.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}

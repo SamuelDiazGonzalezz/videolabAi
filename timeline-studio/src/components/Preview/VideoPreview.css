@@ -1,0 +1,302 @@
+.video-preview {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 18px 14px;
+  container-type: size;
+}
+
+.video-preview--empty { color: var(--muted); font-size: 12px; }
+.video-preview__empty-state { display: grid; justify-items: center; gap: 10px; max-width: 340px; text-align: center; color: var(--muted); }
+.video-preview__empty-state > svg { color: #8faeff; }
+.video-preview__empty-state strong { color: #f3f5fa; font-size: 15px; }
+.video-preview__empty-state span { line-height: 1.45; }
+.video-preview__empty-state button { display: inline-flex; align-items: center; gap: 7px; margin-top: 5px; padding: 10px 14px; border: 1px solid #547fe8; border-radius: 5px; background: #315fc7; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.video-preview__empty-state button:hover { background: #3a6fdc; }
+
+.video-preview:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+  display: flex;
+  padding: 16px 16px 10px;
+  gap: 8px;
+  background: #030405;
+}
+
+.video-preview:fullscreen::backdrop { background: #030405; }
+
+.video-preview:fullscreen .video-preview__frame {
+  width: min(calc(100vw - 32px), var(--fullscreen-frame-width));
+  height: auto;
+  max-width: none;
+  max-height: none;
+  flex: 0 0 auto;
+  border-color: rgba(255, 255, 255, .18);
+  border-radius: 0;
+  box-shadow: 0 22px 80px rgba(0, 0, 0, .65);
+}
+
+.video-preview:fullscreen .video-preview__controls { flex: 0 0 auto; }
+
+.video-preview__frame {
+  position: relative;
+  width: min(52vw, 760px);
+  min-width: 24px;
+  height: auto;
+  max-width: calc(100vw - 86px);
+  overflow: hidden;
+  container-type: size;
+  border: 1px solid #3a3d45;
+  border-radius: 5px;
+  background: #030405;
+  box-shadow: 0 22px 75px rgba(0, 0, 0, .54), 0 0 0 1px rgba(255, 255, 255, .025);
+}
+
+/* La previsualización conserva siempre la relación elegida, incluso cuando el
+   lienzo es horizontal o cuadrado. Además del límite de viewport, cada formato
+   usa la altura real disponible en este contenedor redimensionable. */
+.video-preview__frame--9-16 { width: min(52vw, 760px, 27vh, 304px, calc(56.25cqh - 25.875px)); }
+.video-preview__frame--1-1 { width: min(52vw, 760px, 48vh, 540px, calc(100cqh - 46px)); }
+.video-preview__frame--16-9 { width: min(52vw, 760px, 85.333vh, 960px, calc(177.778cqh - 81.778px)); }
+.video-preview__frame--4-5 { width: min(52vw, 760px, 38.4vh, 432px, calc(80cqh - 36.8px)); }
+
+.video-preview__media-grid { position: absolute; inset: 0; display: grid; gap: 2px; background: #050608; }
+.video-preview__media-grid video { width: 100%; height: 100%; min-width: 0; min-height: 0; display: block; background: #000; cursor: pointer; }
+.video-preview__media-grid--fit,
+.video-preview__media-grid--fill { grid-template: 1fr / 1fr; }
+.video-preview__media-grid--split { grid-template: repeat(2, minmax(0, 1fr)) / 1fr; }
+.video-preview__media-grid--three { grid-template: repeat(3, minmax(0, 1fr)) / 1fr; }
+.video-preview__media-grid--four { grid-template: repeat(2, minmax(0, 1fr)) / repeat(2, minmax(0, 1fr)); }
+.video-preview__media-grid--gameplay { grid-template: minmax(0, 2fr) minmax(0, 1fr) / 1fr; }
+.video-preview__media-grid--gameplay video:last-child { filter: saturate(1.18) contrast(1.08); }
+.video-preview__media-grid--screen-share { display: block; }
+.video-preview__media-grid--screen-share video:first-child { position: absolute; inset: 0; object-fit: cover !important; filter: blur(14px) brightness(.46) !important; transform: scale(1.08); }
+.video-preview__media-grid--screen-share video:last-child { position: absolute; left: 7%; top: 8%; width: 86%; height: 76%; object-fit: contain !important; border: 1px solid rgba(255, 255, 255, .28); border-radius: 4px; box-shadow: 0 14px 40px rgba(0, 0, 0, .5); }
+
+.video-preview__media-grid.is-transitioning { animation-duration: var(--transition-duration, .35s); animation-timing-function: ease-in-out; animation-fill-mode: both; }
+.video-preview__transition--fade { animation-name: preview-transition-fade; }
+.video-preview__transition--dissolve { animation-name: preview-transition-dissolve; }
+.video-preview__transition--wipeleft { animation-name: preview-transition-wipe-left; }
+.video-preview__transition--wiperight { animation-name: preview-transition-wipe-right; }
+.video-preview__transition--slideleft { animation-name: preview-transition-slide-left; }
+.video-preview__transition--slideright { animation-name: preview-transition-slide-right; }
+.video-preview__transition--circleopen { animation-name: preview-transition-circle; }
+
+.video-preview__frame-template { position: absolute; inset: 0; z-index: 3; box-sizing: border-box; pointer-events: none; }
+.video-preview__frame-template--none { display: none; }
+.video-preview__frame-template--minimal { inset: 2.2%; border: 2px solid rgba(255, 255, 255, .8); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .38), 0 2px 12px rgba(0, 0, 0, .28); }
+.video-preview__frame-template--neon { inset: 2.2%; border: 2px solid #5595ff; box-shadow: inset 0 0 8px rgba(61, 132, 255, .78), 0 0 6px #2f75e8, 0 0 18px rgba(47, 117, 232, .86); }
+.video-preview__frame-template--film { border-top: 6cqh solid #080808; border-bottom: 6cqh solid #080808; background: linear-gradient(to bottom, rgba(217, 185, 112, .74) 0 1px, transparent 1px calc(100% - 1px), rgba(217, 185, 112, .74) calc(100% - 1px)); }
+.video-preview__frame-template--film::before,
+.video-preview__frame-template--film::after { content: ""; position: absolute; left: 1.4cqh; right: 1.4cqh; height: 2cqh; background: repeating-linear-gradient(90deg, #bdb8aa 0 1.4cqh, transparent 1.4cqh 3.8cqh); opacity: .62; }
+.video-preview__frame-template--film::before { top: -4cqh; }
+.video-preview__frame-template--film::after { bottom: -4cqh; }
+.video-preview__frame-template--polaroid { border: 4cqh solid #f1eee7; border-bottom-width: 10cqh; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .24); }
+.video-preview__frame-template--cinema { border-top: 9cqh solid #020202; border-bottom: 9cqh solid #020202; box-shadow: inset 0 1px rgba(205, 172, 99, .6), inset 0 -1px rgba(205, 172, 99, .6); }
+
+.video-preview__broll-layer {
+  position: absolute;
+  box-sizing: border-box;
+  z-index: 4;
+  min-width: 12%;
+  min-height: 12%;
+  overflow: visible;
+  border: 1px solid transparent;
+  background: transparent;
+  transform: translate(-50%, -50%);
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+}
+.video-preview__broll-layer img { width: 100%; height: 100%; display: block; object-fit: cover; pointer-events: none; }
+.video-preview__broll-layer.is-selected { z-index: 6; border-color: rgba(255, 255, 255, .94); box-shadow: 0 0 0 1px rgba(19, 82, 191, .9), 0 0 18px rgba(255, 255, 255, .28); }
+.video-preview__logo { position: absolute; z-index: 7; height: auto; max-height: 22%; object-fit: contain; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .5)); pointer-events: none; }
+.video-preview__logo--top-left { top: 4%; left: 4%; }
+.video-preview__logo--top-right { top: 4%; right: 4%; }
+.video-preview__logo--bottom-left { bottom: 4%; left: 4%; }
+.video-preview__logo--bottom-right { right: 4%; bottom: 4%; }
+
+.video-preview__text-layer { position: absolute; inset: 0; z-index: 8; pointer-events: none; }
+.preview-text {
+  --text-color: #fff;
+  position: absolute;
+  box-sizing: border-box;
+  margin: 0;
+  padding: .22em .44em;
+  color: var(--text-color);
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-weight: 800;
+  line-height: 1.14;
+  text-align: center;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+}
+
+.preview-text > span:first-child { display: block; pointer-events: none; }
+.preview-text.is-selected { outline: 1px solid rgba(255, 255, 255, .96); box-shadow: 0 0 0 2px rgba(19, 82, 191, .92), 0 0 16px rgba(255, 255, 255, .34); }
+.preview-text.is-editing { cursor: text; user-select: text; }
+.preview-text__editor {
+  width: 100%;
+  min-height: 1.14em;
+  display: block;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  color: inherit;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  text-shadow: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  resize: none;
+  caret-color: #fff;
+  field-sizing: content;
+}
+.preview-text--outline { -webkit-text-stroke: .06em rgba(5, 5, 5, .96); paint-order: stroke fill; text-shadow: none; }
+.preview-text--box { border-radius: .2em; background: rgba(0, 0, 0, .72); }
+.preview-text--shadow { text-shadow: 0 .13em .24em rgba(0, 0, 0, .92); }
+.preview-text--material { line-height: 1.32; }
+
+/* El color y la transformación salen del playhead. Sin transiciones CSS,
+   React no puede reiniciar accidentalmente el efecto de una palabra. */
+.preview-text__word { display: inline-block; transition: none; }
+
+.preview-transform-handle {
+  position: absolute;
+  z-index: 3;
+  width: 10px;
+  height: 10px;
+  border: 1px solid #11141a;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(19, 82, 191, .95), 0 0 9px rgba(255, 255, 255, .75);
+  touch-action: none;
+}
+.preview-transform-handle--nw { top: 3px; left: 3px; transform: translate(-50%, -50%); cursor: nwse-resize; }
+.preview-transform-handle--ne { top: 3px; right: 3px; transform: translate(50%, -50%); cursor: nesw-resize; }
+.preview-transform-handle--sw { bottom: 3px; left: 3px; transform: translate(-50%, 50%); cursor: nesw-resize; }
+.preview-transform-handle--se { right: 3px; bottom: 3px; transform: translate(50%, 50%); cursor: nwse-resize; }
+
+.video-preview__focus {
+  position: absolute;
+  z-index: 12;
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(255, 255, 255, .7);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(19, 82, 191, .4), 0 0 13px rgba(80, 154, 255, .65);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.video-preview__focus::before,
+.video-preview__focus::after { content: ""; position: absolute; left: 50%; top: 50%; background: rgba(255, 255, 255, .8); transform: translate(-50%, -50%); }
+.video-preview__focus::before { width: 26px; height: 1px; }
+.video-preview__focus::after { width: 1px; height: 26px; }
+
+.video-preview__center-play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  /* Por encima de los B-roll (4/6), el logo (7), los textos (8) y el punto de
+     foco (12): el play siempre tiene que quedar visible y clicable sobre
+     cualquier capa del lienzo. Se queda por debajo del overlay de selección
+     de región (20) para no robarle el arrastre cuando ese modo está activo. */
+  z-index: 15;
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  padding-left: 3px;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, .34);
+  border-radius: 50%;
+  background: rgba(3, 8, 18, .66);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .4);
+  backdrop-filter: blur(10px);
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+
+.video-preview__controls { min-height: 36px; display: flex; align-items: center; gap: 5px; padding: 3px; border: 1px solid var(--line); border-radius: 6px; background: #111318; }
+.video-preview__controls button { width: 29px; height: 29px; display: grid; place-items: center; color: #b9bbc5; border: 0; border-radius: 5px; background: transparent; cursor: pointer; }
+.video-preview__controls button:hover { color: #fff; background: #22252c; }
+.video-preview__controls button.is-active { color: #b9d6ff; background: rgba(19, 82, 191, .28); }
+.video-preview__controls .video-preview__primary-control { color: #fff; background: var(--blue); box-shadow: 0 0 20px rgba(19, 82, 191, .34); }
+.video-preview__controls span { min-width: 138px; padding: 0 8px; color: #f4f5f7; font-size: 10px; font-variant-numeric: tabular-nums; text-align: center; }
+.video-preview__controls small { color: #777a84; }
+.video-preview__controls .video-preview__roi-zoom { display: flex; align-items: center; gap: 2px; min-width: 0; padding: 0; }
+
+@keyframes preview-transition-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes preview-transition-dissolve { from { opacity: .08; filter: contrast(1.8) blur(7px); } to { opacity: 1; filter: none; } }
+@keyframes preview-transition-wipe-left { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0); } }
+@keyframes preview-transition-wipe-right { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
+@keyframes preview-transition-slide-left { from { opacity: .2; transform: translateX(18%); } to { opacity: 1; transform: translateX(0); } }
+@keyframes preview-transition-slide-right { from { opacity: .2; transform: translateX(-18%); } to { opacity: 1; transform: translateX(0); } }
+@keyframes preview-transition-circle { from { clip-path: circle(0 at 50% 50%); } to { clip-path: circle(75% at 50% 50%); } }
+
+/* Herramienta de ajuste manual del vídeo: arrastra para mover el contenido
+   (no una ventana de selección) y usa la rueda del ratón, o los botones +/-
+   de la barra de controles inferior, para acercar/alejar. */
+.rectangle-selection-overlay { position: absolute; z-index: 20; inset: 0; cursor: grab; touch-action: none; user-select: none; }
+.rectangle-selection-overlay:active { cursor: grabbing; }
+.rectangle-selection-overlay__bottom-bar { position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.rectangle-selection-overlay__inspector { flex: 0 0 auto; display: flex; align-items: center; gap: 7px; padding: 6px 8px; color: #f7f9ff; border: 1px solid rgba(154, 190, 255, .6); border-radius: 4px; background: rgba(8, 12, 20, .88); box-shadow: 0 5px 16px rgba(0, 0, 0, .38); font-size: 10px; font-variant-numeric: tabular-nums; pointer-events: auto; }
+.rectangle-selection-overlay__inspector span { white-space: nowrap; }
+.rectangle-selection-overlay__inspector button { padding: 3px 6px; color: #fff; border: 1px solid rgba(255, 255, 255, .32); border-radius: 3px; background: #243349; font: inherit; font-weight: 700; cursor: pointer; }
+.rectangle-selection-overlay__inspector button:hover { background: #315987; }
+.rectangle-selection-overlay__hint { flex: 1 1 auto; min-width: 0; overflow: hidden; padding: 6px 9px; color: #fff; border: 1px solid rgba(255, 255, 255, .42); border-radius: 4px; background: rgba(5, 8, 13, .76); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
+
+/* Formatos estrechos (9:16, 1:1, 4:5): el texto de ayuda no cabe entero junto
+   al cuadro de zoom dentro del fotograma, así que se muestra completo a la
+   derecha, fuera del recuadro. `frame-wrap` se ciñe exactamente al tamaño del
+   fotograma (no es una fila flex que reparta espacio) para que el vídeo
+   conserve su posición centrada de siempre: el texto es un elemento en
+   posición absoluta que no participa en el layout ni desplaza nada. */
+.video-preview__frame-wrap { position: relative; display: inline-block; max-width: 100%; }
+.video-preview__roi-hint-outside {
+  position: absolute;
+  left: 100%;
+  bottom: 0;
+  width: 220px;
+  margin-left: 12px;
+  padding: 8px 10px;
+  color: #cfd4e2;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, .03);
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: left;
+}
+
+@media (max-width: 760px) {
+  .video-preview { padding: 8px 10px 12px; }
+  .video-preview__frame { max-width: calc(100vw - 86px); }
+  .video-preview__frame--9-16 { width: min(calc(100vw - 86px), 27vh, 304px); }
+  .video-preview__frame--1-1 { width: min(calc(100vw - 86px), 48vh, 540px); }
+  .video-preview__frame--16-9 { width: min(calc(100vw - 86px), 85.333vh, 960px); }
+  .video-preview__frame--4-5 { width: min(calc(100vw - 86px), 38.4vh, 432px); }
+  .video-preview__controls span { min-width: 112px; }
+}

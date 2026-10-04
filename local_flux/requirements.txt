@@ -1,0 +1,11 @@
+# Local FLUX.2 Klein 4B server for a 16 GB NVIDIA GPU
+# Install with the PyTorch command matching your CUDA version first if needed.
+--extra-index-url https://download.pytorch.org/whl/cu126
+torch>=2.6.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+python-multipart>=0.0.20
+pillow>=11.0.0
+transformers>=4.49.0
+accelerate>=1.3.0
+diffusers>=0.40.0
