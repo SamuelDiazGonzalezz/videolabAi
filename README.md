@@ -1,4 +1,7 @@
-# Image Lab
+# Video Lab Ai
+
+<img width="1024" height="571" alt="622205db-1aac-45df-b33e-48e1197b9f01" src="https://github.com/user-attachments/assets/2edd5117-60b9-4e2e-9c64-f4ba4e43428d" />
+
 
 La generación usa un flujo NDJSON: el contador y cada PNG aparecen en la galería en cuanto terminan, sin esperar a que finalice todo el guion.
 
