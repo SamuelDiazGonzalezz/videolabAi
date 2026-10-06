@@ -83,6 +83,7 @@
    forma fiable en todos los navegadores y dejaba visible solo la imagen de
    debajo (que estaba a opacity .08), por lo que la marca se veía negra. */
 .app__brand-mark { position: relative; width: 34px; height: 34px; margin-left: 5px; display: grid; place-items: center; text-decoration: none; }
+.app__brand-text { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: #f2f2f3; color: #151515; font: 800 11px/1 "Vidreum Inter", sans-serif; letter-spacing: -.02em; }
 .app__brand-mark img { width: 32px; height: 32px; object-fit: contain; filter: drop-shadow(0 0 5px rgba(95, 163, 225, .32)); }
 
 .app__status {

@@ -196,6 +196,52 @@ function timingFromInterval(captions: string[], interval: number): SceneTiming {
   return { durations: captions.map(() => interval), subtitles };
 }
 
+// Versiones anteriores del editor recortaban la pista de imágenes a 8 clips, y
+// un montaje guardado así perdía el resto de escenas. Cada imagen del
+// storyboard que no esté en el montaje se vuelve a colocar en su tramo
+// sincronizado, sin tocar las que el usuario ya movió o editó.
+function restoreMissingScenes(
+  state: Record<string, unknown>,
+  scenes: Record<string, unknown>[],
+  durations: number[],
+  apiBase: string
+) {
+  const brollClips = Array.isArray(state.brollClips) ? [...state.brollClips] as Record<string, unknown>[] : [];
+  const present = new Set(brollClips.map((clip) => absoluteUrl(apiBase, clip?.sourceUrl)));
+  const ids = new Set(brollClips.map((clip) => text(clip?.id)));
+  const mediaAssets = Array.isArray(state.mediaAssets) ? [...state.mediaAssets] as Record<string, unknown>[] : [];
+  const assetUrls = new Set(mediaAssets.map((asset) => absoluteUrl(apiBase, asset?.url)));
+  let cursor = 0;
+  let restored = 0;
+  scenes.forEach((scene, index) => {
+    const startTime = cursor;
+    const duration = durations[index] ?? 0;
+    cursor += duration;
+    const imageUrl = absoluteUrl(apiBase, scene.url);
+    if (!imageUrl || present.has(imageUrl) || duration <= 0) return;
+    const sceneNumber = Number(scene.sceneId) || index + 1;
+    let id = `storyboard-image-${index + 1}`;
+    while (ids.has(id)) id = `${id}-r`;
+    ids.add(id);
+    brollClips.push({ id, sourceUrl: imageUrl, name: `Imagen ${sceneNumber}`, startTime, endTime: startTime + duration, opacity: 1, x: .5, y: .5, width: 1, height: 1, blendMode: 'normal' });
+    if (!assetUrls.has(imageUrl)) mediaAssets.push({ id: `storyboard-image-${index + 1}`, name: `Viñeta ${sceneNumber}`, type: 'image', url: imageUrl, duration: 0 });
+    restored += 1;
+  });
+  if (!restored) return;
+  state.brollClips = brollClips.sort((a, b) => Number(a.startTime) - Number(b.startTime));
+  state.mediaAssets = mediaAssets;
+  // Que el vídeo base cubra todas las escenas recuperadas.
+  const clips = Array.isArray(state.clips) ? state.clips as Record<string, unknown>[] : [];
+  const lastClip = clips[clips.length - 1];
+  const covered = clips.reduce((sum, clip) => sum + Math.max(0, Number(clip.sourceOut) - Number(clip.sourceIn)), 0);
+  if (lastClip && cursor > covered) {
+    const extra = cursor - covered;
+    lastClip.sourceOut = Number(lastClip.sourceOut) + extra;
+    lastClip.sourceDuration = Math.max(Number(lastClip.sourceDuration) || 0, Number(lastClip.sourceOut));
+    state.sourceDuration = Math.max(Number(state.sourceDuration) || 0, Number(lastClip.sourceOut));
+  }
+}
+
 async function loadStoryboardContext(apiBase: string, storyboardId: string, contextId: string) {
   const response = await fetch(`${apiBase}/api/storyboards/${encodeURIComponent(storyboardId)}`, {
     cache: 'no-store'
@@ -221,6 +267,7 @@ async function loadStoryboardContext(apiBase: string, storyboardId: string, cont
   const captions = scenes.map((scene: Record<string, unknown>) => text(scene.caption));
   const alignment = audioUrl ? narrationAlignment(record.alignment) : null;
   const timing = (alignment && timingFromNarration(captions, alignment)) || timingFromInterval(captions, interval);
+  if (savedEditorState) restoreMissingScenes(savedEditorState, scenes, timing.durations, apiBase);
   const context = {
     expiresAt: Date.now() + CONTEXT_TTL_MS,
     ownerId: '',
@@ -278,10 +325,10 @@ export function LocalBootstrap() {
 
   if (status === 'ready') return <App />;
   if (status === 'empty') {
-    return <div className="app app--loading"><strong>RacingMonos Timeline</strong><span>Abre el editor desde un storyboard generado.</span></div>;
+    return <div className="app app--loading"><strong>Video Lab Ai · Timeline</strong><span>Abre el editor desde un storyboard generado.</span></div>;
   }
   if (status === 'error') {
-    return <div className="app app--loading"><strong>No se pudo abrir el storyboard</strong><span>{message}</span><a href="http://localhost:3000/">Volver a RacingMonos</a></div>;
+    return <div className="app app--loading"><strong>No se pudo abrir el storyboard</strong><span>{message}</span><a href="http://localhost:3000/">Volver a Video Lab Ai</a></div>;
   }
   return <div className="app app--loading"><span className="app__status-spinner" /><strong>{message}</strong></div>;
 }

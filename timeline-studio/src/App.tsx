@@ -51,7 +51,6 @@ import {
   clipAtProjectTime,
   MAX_TIMELINE_SUBTITLE_CLIPS,
   MAX_TIMELINE_TEXT_CLIPS,
-  MAX_TIMELINE_VIDEO_CLIPS,
   serializeTimeline,
   sourceTimeAtProjectTime
 } from './utils/timeline';
@@ -382,12 +381,15 @@ interface StoryboardEditorScene {
 // (cada uno con su propio sourceUrl, algo que buildTimeline ya soporta) más
 // un subtítulo por escena con la narración y la narración combinada como
 // pista de audio. No hace falta ningún vídeo "fuente" único.
+// Escenas de un storyboard de Video Lab Ai (guion de hasta 10.000 caracteres).
+const MAX_STORYBOARD_SCENES = 400;
+
 function readStoryboardEditorContext(contextId: string, userId = ''): Partial<SerializedTimeline> | null {
   if (!/^[a-z0-9_-]{1,160}$/i.test(contextId)) return null;
   try {
     const storageKey = `${STORYBOARD_EDITOR_CONTEXT_PREFIX}${contextId}`;
     const raw = window.sessionStorage.getItem(storageKey);
-    if (!raw || raw.length > 200_000) return null;
+    if (!raw || raw.length > 1_000_000) return null;
     const context = contextRecord(JSON.parse(raw));
     if (!context) return null;
 
@@ -419,7 +421,7 @@ function readStoryboardEditorContext(contextId: string, userId = ''): Partial<Se
 
     const rawScenes = Array.isArray(context.scenes) ? context.scenes : [];
     const scenes = rawScenes
-      .slice(0, MAX_TIMELINE_VIDEO_CLIPS)
+      .slice(0, MAX_STORYBOARD_SCENES)
       .map((value, index): StoryboardEditorScene | null => {
         const scene = contextRecord(value);
         if (!scene) return null;
@@ -960,8 +962,8 @@ export function App() {
   );
   const returnHref = editorReturnHref(target);
   const returnLabel = target.localMode
-    ? 'Volver a RacingMonos'
-    : target.returnToClippingProject ? 'Volver a los clips generados' : 'Volver a Vidreum.ai';
+    ? 'Volver a Video Lab Ai'
+    : target.returnToClippingProject ? 'Volver a los clips generados' : 'Volver a Video Lab Ai';
   const timeline = useTimelineStore((state) => state.timeline);
   const currentTime = useTimelineStore((state) => state.currentTime);
   const isDirty = useTimelineStore((state) => state.isDirty);
@@ -2089,7 +2091,7 @@ export function App() {
     try {
       await persistProject();
       await waitForEditorFonts();
-      const payload = buildLocalRenderPayload(timeline, target.storyboardId, title.trim() || 'RacingMonos');
+      const payload = buildLocalRenderPayload(timeline, target.storyboardId, title.trim() || 'Video Lab Ai');
       const result = await runLocalRender(target.apiBase, payload, (progress, message) => {
         setExportProgress(progress);
         setStatus(message);
@@ -2475,7 +2477,7 @@ export function App() {
             {isExporting ? <X size={15} /> : <Download size={15} />}
             <span>{isCancellingExport ? 'Cancelando…' : isExporting ? 'Cancelar exportación' : 'Exportar'}</span>
           </button>
-          <a className="app__brand-mark" href={returnHref} title={returnLabel}><img src="/assets/vidreum-logo.avif" alt="" /></a>
+          <a className="app__brand-mark" href={returnHref} title={returnLabel}><span className="app__brand-text">VL</span></a>
         </div>
       </header>
 
@@ -2623,7 +2625,7 @@ export function App() {
               className="export-dialog__download"
               href={exportResult.videoDownloadUrl || (exportResult.videoUrl.includes('?')
                 ? exportResult.videoUrl
-                : `${exportResult.videoUrl}?download=${encodeURIComponent(`${title || 'vidreum-video'}.mp4`)}`)}
+                : `${exportResult.videoUrl}?download=${encodeURIComponent(`${title || 'video-lab-ai'}.mp4`)}`)}
               download
             ><Download size={17} /> Descargar MP4</a>
           </section>

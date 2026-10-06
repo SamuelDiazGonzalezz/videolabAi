@@ -3,9 +3,9 @@ import type { ReactNode } from 'react';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'RacingMonos Studio · Storyboards con IA local',
+  title: 'Video Lab Ai · Storyboards con IA local',
   description: 'Convierte un guion en una secuencia coherente de ilustraciones de Monos con FLUX local.',
-  applicationName: 'RacingMonos Studio',
+  applicationName: 'Video Lab Ai',
 };
 
 export const viewport: Viewport = {

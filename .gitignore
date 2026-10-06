@@ -4,3 +4,6 @@ data/storyboards/
 .env.local
 *.tsbuildinfo
 data/renders/
+data/references/
+data/scripts/
+data/logs/

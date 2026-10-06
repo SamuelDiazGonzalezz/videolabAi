@@ -5,7 +5,7 @@
 
 La generación usa un flujo NDJSON: el contador y cada PNG aparecen en la galería en cuanto terminan, sin esperar a que finalice todo el guion.
 
-RacingMonos recibe un guion y genera una secuencia de imágenes coherentes con FLUX.2 Klein 4B. Divide el texto en escenas de 3, 4 o 5 segundos, mantiene bloqueado el estilo de los monos y permite abrir cada escena en grande o descargar todo el storyboard como ZIP.
+Video Lab Ai recibe un guion y genera una secuencia de imágenes coherentes con FLUX.2 Klein 4B. Divide el texto en escenas de 3, 4 o 5 segundos, mantiene bloqueado el estilo de los monos y permite abrir cada escena en grande o descargar todo el storyboard como ZIP.
 
 La interfaz sigue una composición minimalista tipo showroom: la segunda ilustración de referencia se usa como visual principal, las escenas aparecen en directo y la biblioteca recupera los storyboards guardados incluso después de reiniciar Next.js. Cada ejecución se guarda en data/storyboards/<id>/, con un storyboard.json y un PNG por escena.
 
@@ -61,7 +61,7 @@ Si algún día quieres usar generación remota, configura `FAL_KEY` y cambia `GE
 
 El botón **Abrir editor** de un storyboard abre `timeline-studio` en modo local. El editor recibe automáticamente cada PNG como una capa B-roll con el intervalo de su escena, el texto del guion como subtítulo editable y la pista `narration.mp3` cuando se genera la voz. Puedes arrastrar las capas, cambiar sus tiempos y editar el texto desde el timeline; **Guardar cambios** escribe la instantánea en `data/storyboards/<id>/storyboard.json`.
 
-`start-local.ps1` levanta los tres procesos necesarios: FLUX (`8188`), el editor Vite (`5173`) y RacingMonos/Next (`3000`). Para habilitar las voces españolas, añade `ELEVENLABS_API_KEY` en `.env.local` y reinicia `npm run dev`. El selector **Voz española** carga las voces de tu cuenta (`/api/voices`), muestra primero las que hablan español (etiqueta ES) y permite escuchar una muestra con ▶ antes de generar. Para tener más acentos (castellano, mexicano, argentino…) añádelos desde la Voice Library de ElevenLabs a *My Voices* y aparecerán automáticamente. La voz elegida se recuerda en el navegador.
+`start-local.ps1` levanta los tres procesos necesarios: FLUX (`8188`), el editor Vite (`5173`) y Video Lab Ai/Next (`3000`). Para habilitar las voces españolas, añade `ELEVENLABS_API_KEY` en `.env.local` y reinicia `npm run dev`. El selector **Voz española** carga las voces de tu cuenta (`/api/voices`), muestra primero las que hablan español (etiqueta ES) y permite escuchar una muestra con ▶ antes de generar. Para tener más acentos (castellano, mexicano, argentino…) añádelos desde la Voice Library de ElevenLabs a *My Voices* y aparecerán automáticamente. La voz elegida se recuerda en el navegador.
 
 Cuando hay narración, cada imagen y su subtítulo se colocan en el timeline en el instante exacto en que la voz pronuncia esa parte del guion (timestamps de ElevenLabs), en lugar de usar el intervalo fijo de 3/4/5 s. Sin voz se usa el intervalo fijo. La API usa `eleven_multilingual_v2`, guarda el MP3 y los timestamps de alineación en la misma carpeta del storyboard. Sin esa clave las imágenes siguen generándose y el editor se abre igualmente, pero no se añade audio.
 
@@ -85,3 +85,34 @@ Antes de dibujar, el servidor FLUX usa su propio codificador de texto (Qwen3-4B,
 Cada imagen se genera con su descripción más un bloque de estilo fijo. El plan se guarda en `storyboard.json` (`plan`) y tarda unos 20 s para un guion corto. Si falla, se usa el prompt directo de la frase.
 
 Las referencias integradas contienen carteles con texto ("TRONCOMÓVILES", "SE VENDE"…) que FLUX copiaba en las escenas: el servidor los tapa con el color del propio cartel al cargarlas (`REFERENCE_TEXT_MASKS` en `local_flux/server.py`). Los PNG originales no se modifican.
+
+## Estilos (tipos de referencias)
+
+Al crear un storyboard eliges un **estilo**. Cada estilo tiene sus propias imágenes de referencia, y solo esas se envían a FLUX:
+
+- **Monos** (integrado): tus ilustraciones de `public/references/monos`, los pilotos y los coches rojos.
+- **En blanco** (integrado): sin referencias ni reparto fijo. El director (Qwen3) lee el guion, elige un estilo de dibujo (`art_style`), diseña a los personajes y los describe completos en cada escena para que salgan iguales.
+- **Estilos propios**: se crean desde **Editar → Nuevo estilo**, con un nombre, una nota de estilo opcional para el director y sus propias imágenes.
+
+La ventana de referencias filtra por estilo (Todos / Monos / En blanco / propios) y permite añadir o borrar imágenes de cada uno, o eliminar un estilo propio con todas sus imágenes. Todo se guarda en `data/references/manifest.json`.
+
+## Guiones con Qwen3
+
+La sección **Guiones** (debajo de Assets) escribe guiones de narración en español a partir de una idea o un texto, con el mismo Qwen3-4B local que hace de director (`local_flux/writer.py`, endpoint `/write-script`, retransmitido por `/api/scripts/generate`). Eliges duración (30 s – 5 min, a unas 2,5 palabras por segundo) y tono; al pulsar **Generar** el chat sube y debajo se abre la ventana donde el guion aparece letra a letra. Después puedes **Copiar**, **Guardar** o **Usar en storyboard** (lo lleva al cuadro de guion de Crear). Los guardados están en **Guiones guardados** (`data/scripts/scripts.json`). El fondo es `public/assets/guiones-bg.mp4`.
+
+## Editar escenas con IA
+
+Cada imagen de la galería tiene un botón de varita (arriba a la derecha) que abre **¿Qué quieres cambiar?**: describe el arreglo en español ("quítale la mano que sobra", "que el balón sea naranja") o usa una sugerencia. Qwen3 lo convierte en una instrucción precisa en inglés y FLUX edita la imagen usando la escena actual como referencia, manteniendo personajes, encuadre y estilo (endpoint `/edit`, ~20-30 s). Mientras tanto la tarjeta muestra una animación de degradados. Cada edición se guarda como una versión nueva (`scene-XX-vN.png`), el montaje del editor de vídeo pasa a usarla y **Deshacer última edición** vuelve a la anterior.
+
+Las llamadas de Next al servidor FLUX usan `lib/fluxFetch.ts` (undici sin el límite de 5 minutos de Node) y el servidor ejecuta el trabajo de GPU fuera de su bucle de eventos, así que `/health` responde aunque esté generando.
+
+## Mapa de nodos
+
+Al generar, el panel de escenas muestra por defecto un **mapa de nodos** (selector Mapa / Cuadrícula): un nodo **Guion**, y por escena un nodo **Prompt** con la descripción visual usada para la imagen conectado a su nodo **Imagen**; las imágenes se encadenan en orden. Detrás va `public/assets/mapa-bg.mp4` (el vídeo vertical girado a horizontal y sin audio).
+
+- Edita el texto de un Prompt y pulsa **Generar** para rehacer esa imagen con el prompt nuevo (nueva versión, con deshacer); la varita de cada imagen sigue abriendo **Editar con IA**.
+- Arrastra nodos, desplaza el lienzo (herramienta mano o arrastrando el fondo) y haz zoom con la rueda.
+- Crea conexiones arrastrando desde la salida (derecha) de un nodo a la entrada (izquierda) de otro; selecciona una conexión o una nota y bórrala con la papelera o Supr.
+- Notas amarillas con la herramienta nota (N); restaurar disposición, encuadrar, zoom y pantalla completa en la barra inferior.
+
+La disposición (posiciones, conexiones, notas y vista) se guarda en `storyboard.json` (`mapState`) mediante `/api/storyboards/<id>/map`.

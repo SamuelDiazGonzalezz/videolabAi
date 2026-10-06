@@ -196,7 +196,7 @@ describe('portapapeles interno del timeline', () => {
         },
         brollTrack: {
           ...current.brollTrack,
-          clips: Array.from({ length: 8 }, (_, index) => ({ ...brollClip(`broll-${index}`, 0, 1), keyframes: undefined }))
+          clips: Array.from({ length: 400 }, (_, index) => ({ ...brollClip(`broll-${index}`, 0, 1), keyframes: undefined }))
         }
       },
       selection: null,
@@ -210,7 +210,7 @@ describe('portapapeles interno del timeline', () => {
     let state = useTimelineStore.getState();
     expect(state.timeline!.textTrack.clips.filter((clip) => clip.kind === 'text')).toHaveLength(48);
     expect(state.timeline!.textTrack.clips.filter((clip) => clip.kind === 'subtitle')).toHaveLength(600);
-    expect(state.timeline!.brollTrack.clips).toHaveLength(8);
+    expect(state.timeline!.brollTrack.clips).toHaveLength(400);
     expect(state.history).toHaveLength(1);
     expect(store.pasteClipboard()).toBe(0);
     state = useTimelineStore.getState();

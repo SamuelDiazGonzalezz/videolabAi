@@ -31,7 +31,7 @@ try {
     }
     if (-not $ready) { throw "El servicio local no respondió en 6 minutos." }
     Write-Host "FLUX local listo. npm run dev abrirá Next y el editor Timeline"
-    Write-Host "Abriendo RacingMonos Studio en http://localhost:3000"
+    Write-Host "Abriendo Video Lab Ai en http://localhost:3000"
     npm run dev
 } finally {
     if (-not $fluxProcess.HasExited) { Stop-Process -Id $fluxProcess.Id }

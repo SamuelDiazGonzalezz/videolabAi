@@ -67,6 +67,9 @@ const BROLL_BLEND_MODES: BrollBlendMode[] = ['normal', 'multiply', 'screen'];
 // entrega un clip de vídeo independiente por imagen generada.
 export const MAX_TIMELINE_VIDEO_CLIPS = 60;
 export const MAX_TIMELINE_TEXT_CLIPS = 48;
+// Un storyboard largo coloca una imagen por escena (hasta ~170 con 10.000
+// caracteres de guion). Única fuente de verdad para el builder y el store.
+export const MAX_TIMELINE_BROLL_CLIPS = 400;
 // Los subtítulos generados por transcripción automática se renderizan en un
 // único archivo .ass (createTimedKaraokeSubtitleFilter), a diferencia de cada
 // frase de texto libre, que se rasteriza como overlay/entrada de ffmpeg
@@ -344,7 +347,7 @@ export function buildTimeline(
     .map((value, index) => normalizeTextClip(value, cursor, index))
     .filter((value): value is TextClip => Boolean(value));
   const brollClips = (Array.isArray(serialized?.brollClips) ? serialized.brollClips : [])
-    .slice(0, 8)
+    .slice(0, MAX_TIMELINE_BROLL_CLIPS)
     .map((value, index) => normalizeBrollClip(value, cursor, index))
     .filter((value): value is BrollClip => Boolean(value));
   const fitMode = isChoice(settings.fitMode, FIT_MODES, 'contain');

@@ -21,7 +21,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const record = await getStoryboard(id);
   if (!record) return json({ error: 'Storyboard no encontrado.' }, 404);
   const body = await request.json().catch(() => ({}));
-  const script = String(body.script || record.script || '').trim().slice(0, 20_000);
+  const script = String(body.script || record.script || '').trim().slice(0, 10_000);
   const voiceId = String(body.voiceId || process.env.ELEVENLABS_VOICE_ID || '').trim();
   const voiceName = String(body.voiceName || voiceLabel(voiceId)).trim().slice(0, 80);
   if (!script) return json({ error: 'El guion está vacío.' }, 400);

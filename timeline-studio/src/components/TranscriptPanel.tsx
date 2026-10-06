@@ -57,7 +57,7 @@ export function TranscriptPanel({ onAddText, onAddSubtitle, onTranscribe, isTran
     const url = URL.createObjectURL(new Blob([content || 'Sin frases'], { type: 'text/plain;charset=utf-8' }));
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'transcripcion-vidreum.txt';
+    link.download = 'transcripcion-video-lab-ai.txt';
     link.style.display = 'none';
     document.body.append(link);
     link.click();

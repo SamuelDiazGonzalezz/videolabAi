@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
   getTimelineRangeTargets,
+  MAX_TIMELINE_BROLL_CLIPS,
   MAX_TIMELINE_SUBTITLE_CLIPS,
   MAX_TIMELINE_TEXT_CLIPS,
   MAX_TIMELINE_VIDEO_CLIPS
@@ -25,7 +26,6 @@ const MIN_ZOOM = 24;
 const MAX_ZOOM = 260;
 const MIN_CLIP_DURATION = 0.2;
 const MAX_HISTORY = 60;
-const MAX_TIMELINE_BROLL_CLIPS = 8;
 const ROI_MIN_SIZE = 0.12;
 const ROI_FULL_FRAME: RectangleSelection = { x: 0, y: 0, width: 1, height: 1 };
 
