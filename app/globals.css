@@ -211,3 +211,38 @@
 .scene-edit__submit:hover:not(:disabled){background:#fff}
 .scene-edit__submit:disabled{opacity:.45;cursor:default}
 @media(max-width:720px){.scene-edit{grid-template-columns:1fr}.scene-edit__preview img{max-height:38vh}}
+/* La cabecera de la galería reparte sus botones en varias líneas si no caben. */
+.gallery-heading{flex-wrap:wrap;row-gap:12px}
+.gallery-heading>div:first-child{min-width:0}
+.gallery-actions{flex-wrap:wrap;justify-content:flex-end;max-width:100%}
+.offline-dot{width:7px;height:7px;flex:none;border-radius:50%;background:#e06a6a;box-shadow:0 0 0 3px rgba(224,106,106,.15)}
+.app-toast{position:fixed;right:20px;bottom:20px;z-index:120;display:flex;align-items:flex-start;gap:12px;max-width:min(440px,calc(100vw - 40px));padding:12px 14px;border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.55);font-size:11.5px;line-height:1.5;animation:dropdown-in .2s ease}
+.app-toast--error{border:1px solid #c94a4a;background:#2a1414;color:#ffd6d6}
+.app-toast--ok{border:1px solid #3c6b47;background:#142a1a;color:#c9f2d3}
+.app-toast button{flex:none;color:inherit;opacity:.7}
+.app-toast button:hover{opacity:1}
+/* Selector de voces en español */
+.voice-filters{display:flex;gap:4px;margin-bottom:6px;overflow-x:auto;padding-bottom:3px;scrollbar-width:thin}
+.voice-filters button{flex:none;display:flex;align-items:center;gap:4px;height:24px;padding:0 9px;border:1px solid #303033;border-radius:12px;color:#8d8d92;font-size:9.5px;white-space:nowrap}
+.voice-filters button small{color:#6d6d72;font:8px ui-monospace,monospace}
+.voice-filters button:hover{border-color:#555;color:#e6e6e8}
+.voice-filters button.selected{border-color:#d9d9dc;background:rgba(255,255,255,.08);color:#fff}
+.voice-search{width:100%;height:28px;margin-bottom:6px;padding:0 10px;border:1px solid #303033;border-radius:6px;outline:none;background:#161618;color:#e6e6e8;font-size:10px}
+.voice-search:focus{border-color:#d9d9dc}
+.voice-option.is-locked{opacity:.55}
+.voice-option.is-locked .voice-select{cursor:not-allowed}
+.voice-option.is-locked:hover{opacity:.8}
+.voice-tag{text-transform:none}
+.voice-empty{padding:14px;color:#77777c;font-size:10px;text-align:center}
+.voice-quota{display:grid;gap:3px;margin-top:6px;padding:7px 9px;border:1px solid #2f3a31;border-radius:6px;background:#141a15;color:#a9c7ae;font-size:9.5px}
+.voice-quota b{color:#d6f2db}
+.voice-quota.is-short{border-color:#6b4a2a;background:#1f170f;color:#e8c49a}
+.voice-quota.is-short b{color:#ffd9ad}
+.voice-quota small{color:inherit;font-size:9px}
+/* Selector de tipo de imagen */
+.art-type-picker{margin-top:14px}
+.art-type-picker .control-heading svg{vertical-align:-2px;margin-right:5px}
+.art-type-picker .chat-dropdown__trigger{width:100%;justify-content:flex-start;height:36px}
+.art-type-picker .chat-dropdown__trigger>span:nth-child(2){flex:1;text-align:left}
+.art-type-picker .chat-dropdown__menu{width:100%;min-width:260px;max-height:min(360px,60vh);z-index:30}
+.art-type-locked{padding:8px 10px;border:1px dashed #3b3b3e;border-radius:7px;color:#8d8d92;font-size:9.5px;line-height:1.5}

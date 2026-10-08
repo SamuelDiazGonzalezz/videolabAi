@@ -44,9 +44,11 @@ Return exactly this JSON object:
 SCENE_USER = """Story bible (keep everything consistent with it):
 {bible}
 
-Story so far (previous sentences): {previous}
-THIS SCENE ({index} of {total}): \"{sentence}\"
-What comes next: {following}
+Context only, already illustrated in earlier scenes (do NOT draw it): {previous}
+Context only, will be illustrated in later scenes (do NOT draw it): {following}
+
+THE SENTENCE TO ILLUSTRATE NOW (scene {index} of {total}): \"{sentence}\"
+Illustrate this sentence and nothing that only appears in the context lines above.
 
 {rules}"""
 
@@ -98,8 +100,28 @@ Do not show earlier or later events. Do not describe the art style. Never mentio
 Answer with the description only."""
 
 
-def _directions(mode: str, notes: str):
+WHITE_DIRECTION = (
+    "This is an EDUCATIONAL video drawn on a PURE WHITE background, like a clean explainer or whiteboard animation. "
+    "Every illustration shows only the key subject of the sentence (objects, animals, people, simple diagrams made of "
+    "objects) ISOLATED on plain white: no landscape, no room, no floor, no sky, no horizon, no background scenery at all. "
+    "Choose ONE clean, friendly illustration style for the whole video (for example flat vector with soft shading) and "
+    "keep it in every scene. Design any recurring character once with a precise look and repeat it identically. "
+    "Abstract ideas are shown with concrete, recognizable objects or symbols; quantities are shown by the number of objects."
+)
+
+WHITE_SCENE_RULES = """Write the illustration for THIS SCENE only, in English, 2 to 4 sentences, at most 90 words:
+- Show ONLY the concept of THIS sentence, as big and centered as possible. Do not repeat objects that belong to other sentences: if the sentence is about sunlight, show the sun shining on the plant; if it is about water, show the roots drinking water; if it is about air, show air flowing into the leaves.
+- Use a close or medium framing so the subject fills most of the image.
+- If the sentence explains a process or comparison, arrange 2-4 objects side by side or with simple arrows.
+- If a recurring character appears, repeat their key look from the bible.
+- State explicitly that everything sits on a pure white background with no scenery, no floor and no horizon.
+Do not show earlier or later events. Do not describe the art style. Never mention text, labels, letters, numbers or logos.
+Answer with the description only."""
+
+
+def _directions(mode: str, notes: str, medium: str = ""):
     """Returns (bible_system, bible_user, scene_system, scene_rules) for a style mode."""
+    chosen = (f" The user chose this exact art medium for every image, use it word for word as the art_style: {medium}." if medium and mode != "monos" else "")
     if mode == "monos":
         return (
             "You are the art director of an animated storyboard. " + CAST + " "
@@ -111,6 +133,18 @@ def _directions(mode: str, notes: str):
             "The description must make the sentence instantly recognizable in the picture.",
             MONOS_SCENE_RULES,
         )
+    if mode == "white":
+        direction = WHITE_DIRECTION + (f" Match the drawing style of the user's reference images. {notes}" if notes else "") + chosen
+        return (
+            "You are the art director of an educational explainer video. " + direction + " "
+            "Read the whole script (it is in Spanish) and plan a coherent visual world for it. "
+            "Answer with JSON only, in English, no markdown.",
+            FREE_BIBLE_USER,
+            "You are the illustrator of an educational explainer video. " + direction + " "
+            "You turn one sentence of a Spanish script into the description of ONE illustration. "
+            "The description must make the sentence instantly understandable at a glance.",
+            WHITE_SCENE_RULES,
+        )
     direction = FREE_DIRECTION
     if mode == "custom":
         direction = (
@@ -120,6 +154,7 @@ def _directions(mode: str, notes: str):
         )
     elif notes:
         direction += f" The user adds these notes: {notes}."
+    direction += chosen
     return (
         "You are the art director of an illustrated storyboard. " + direction + " "
         "Read the whole script (it is in Spanish) and plan a coherent visual world for it. "
@@ -175,8 +210,8 @@ class StoryPlanner:
         generated = output[:, inputs["input_ids"].shape[1] :]
         return [_strip(text) for text in self.tokenizer.batch_decode(generated, skip_special_tokens=True)]
 
-    def plan(self, script: str, sentences: list[str], mode: str = "monos", notes: str = "", batch_size: int = 8) -> dict:
-        bible_system, bible_user, scene_system, scene_rules = _directions(mode, notes.strip()[:400])
+    def plan(self, script: str, sentences: list[str], mode: str = "monos", notes: str = "", medium: str = "", batch_size: int = 8) -> dict:
+        bible_system, bible_user, scene_system, scene_rules = _directions(mode, notes.strip()[:400], medium.strip()[:300])
         script = script.strip()[:10000]
         raw_bible = self._chat(
             [[{"role": "system", "content": bible_system}, {"role": "user", "content": bible_user.format(script=script)}]],
@@ -229,3 +264,52 @@ def rewrite_edit_instruction(planner: "StoryPlanner", request: str, context: str
     text = planner._chat([[{"role": "system", "content": EDIT_SYSTEM}, {"role": "user", "content": user}]], max_new_tokens=90)[0]
     text = " ".join(text.split()).strip().strip('"')
     return text or request.strip()
+
+
+EDIT_PLAN_SYSTEM = (
+    "You are the art director fixing ONE illustration of a storyboard. The user writes in Spanish and may either "
+    "DESCRIBE A PROBLEM they see (e.g. 'el niño está dentro de la tortuga', 'tiene tres manos', 'la cara está rara') "
+    "or GIVE AN INSTRUCTION (e.g. 'ponle una gorra azul'). A described problem must be FIXED, never reproduced. "
+    "Decide how to fix it:\n"
+    "- mode 'edit': small local appearance changes that keep the same composition (colors, clothing, adding or removing "
+    "a small object, removing text, expression tweaks, lighting).\n"
+    "- mode 'regenerate': anything that changes pose, position, layout or anatomy (characters merged or inside each other, "
+    "extra or missing limbs or fingers, wrong number of characters, someone in the wrong place, broken faces or bodies, "
+    "a different action or camera angle).\n"
+    "Answer with JSON only, in English, no markdown."
+)
+
+EDIT_PLAN_USER = """Current scene description (what the illustration should show):
+\"\"\"{description}\"\"\"
+
+User request: \"{request}\"
+
+Return exactly this JSON:
+{{
+  "problem": "one short sentence: what is wrong or what the user wants",
+  "mode": "edit" or "regenerate",
+  "instruction": "for mode edit: one precise English editing instruction stating the desired end result",
+  "description": "for mode regenerate: the full corrected scene description (keep every character's look, the setting and the action), written positively so the problem cannot happen again, e.g. 'the boy kneels on the sand beside the turtle, clearly separate from it, with exactly two hands'"
+}}"""
+
+
+def plan_scene_fix(planner: "StoryPlanner", request: str, description: str) -> dict:
+    """Interprets a user's fix request and chooses between editing the image and redrawing the scene."""
+    raw = planner._chat(
+        [[{"role": "system", "content": EDIT_PLAN_SYSTEM}, {"role": "user", "content": EDIT_PLAN_USER.format(description=description.strip()[:1500], request=request.strip()[:600])}]],
+        max_new_tokens=420,
+    )[0]
+    data = _parse_json(raw) or {}
+    mode = "regenerate" if str(data.get("mode", "")).strip().lower().startswith("regen") else "edit"
+    instruction = " ".join(str(data.get("instruction") or "").split())
+    corrected = " ".join(str(data.get("description") or "").split())
+    if mode == "regenerate" and len(corrected) < 40:
+        mode = "edit"
+    if mode == "edit" and not instruction:
+        instruction = rewrite_edit_instruction(planner, request, description)
+    return {
+        "problem": " ".join(str(data.get("problem") or "").split()),
+        "mode": mode,
+        "instruction": instruction,
+        "description": " ".join(corrected.split()[:150]),
+    }

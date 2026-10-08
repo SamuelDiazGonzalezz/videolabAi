@@ -12,7 +12,7 @@ import path from 'node:path';
 //  - Estilos propios creados por el usuario, con sus imágenes y una nota de estilo.
 // Los originales de public/ no se tocan, así que Monos siempre se puede restaurar.
 
-export type StyleKind = 'monos' | 'free' | 'custom';
+export type StyleKind = 'monos' | 'free' | 'white' | 'custom';
 
 export type ReferenceStyle = {
   id: string;
@@ -39,6 +39,7 @@ type Manifest = { version: 2; styles: ReferenceStyle[]; references: StoredRefere
 
 export const MONOS_STYLE_ID = 'monos';
 export const BLANK_STYLE_ID = 'blank';
+export const WHITE_STYLE_ID = 'white';
 
 const BUILTIN_STYLES: ReferenceStyle[] = [
   {
@@ -54,6 +55,14 @@ const BUILTIN_STYLES: ReferenceStyle[] = [
     name: 'En blanco',
     description: 'Sin referencias ni personajes fijos: el director elige estilo, personajes y mundo según el guion.',
     kind: 'free',
+    builtin: true,
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: WHITE_STYLE_ID,
+    name: 'Fondo blanco',
+    description: 'Vídeos educativos: objetos y personajes aislados sobre fondo blanco puro, sin paisaje. Admite referencias opcionales para fijar el dibujo.',
+    kind: 'white',
     builtin: true,
     createdAt: '2026-01-01T00:00:00.000Z',
   },

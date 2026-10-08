@@ -11,6 +11,7 @@ import {
   type StoryboardRecord,
 } from '../../../lib/storyboards';
 import { getStyle, referenceFilesForGeneration, type ReferenceStyle } from '../../../lib/references';
+import { artTypeById, type ArtType } from '../../../lib/artTypes';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -33,6 +34,7 @@ type StoryboardArgs = {
   files: File[];
   referenceUrls: string[];
   style: ReferenceStyle;
+  artType: ArtType;
   storyboard: StoryboardRecord;
   onEvent?: (event: ProgressEvent) => Promise<void> | void;
 };
@@ -94,12 +96,12 @@ function sceneSeed(baseSeed: number, sceneNumber: number) {
 
 // El director lee el guion completo una vez y devuelve una biblia visual y una
 // descripción concreta por escena. Si falla, se usa el prompt directo.
-async function planStory(script: string, parts: string[], style: ReferenceStyle): Promise<StoryPlan | null> {
+async function planStory(script: string, parts: string[], style: ReferenceStyle, hasReferences = false, medium = ''): Promise<StoryPlan | null> {
   try {
     const response = await fluxFetch(`${FLUX_BASE}/plan`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ script, scenes: parts, mode: style.kind, notes: style.description }),
+      body: JSON.stringify({ script, scenes: parts, mode: style.kind, notes: style.kind === 'custom' ? style.description : style.kind === 'white' && hasReferences ? 'Reference images are provided.' : '', medium }),
       // ~1-3 s por escena en una RTX 4080; margen amplio para guiones largos.
       signal: AbortSignal.timeout(Math.max(5 * 60_000, parts.length * 20_000)),
     });
@@ -135,7 +137,9 @@ async function uploadReferences(files: File[]) {
 }
 
 async function generateStoryboard(args: StoryboardArgs) {
-  const { script, parts, interval, aspectRatio, seed, provider, files, referenceUrls, storyboard, style, onEvent } = args;
+  const { script, parts, interval, aspectRatio, seed, provider, files, referenceUrls, storyboard, style, artType, onEvent } = args;
+  // Monos tiene la técnica fijada por sus referencias.
+  const artPrompt = style.kind === 'monos' ? '' : artType.prompt;
   const images: GeneratedImage[] = [];
   await onEvent?.({ type: 'start', total: parts.length, intervalSeconds: interval, aspectRatio, storyboardId: storyboard.id });
   if (provider === 'local') {
@@ -145,7 +149,7 @@ async function generateStoryboard(args: StoryboardArgs) {
   let plan: StoryPlan | null = null;
   if (provider === 'local') {
     await onEvent?.({ type: 'scene-start', current: 1, total: parts.length, caption: 'El director (Qwen3) está leyendo el guion y planificando cada escena…' });
-    plan = await planStory(script, parts, style);
+    plan = await planStory(script, parts, style, files.length > 0, artPrompt);
     if (plan) await saveStoryboardPlan(storyboard.id, plan);
   }
 
@@ -153,9 +157,9 @@ async function generateStoryboard(args: StoryboardArgs) {
     const caption = parts[index];
     const current = index + 1;
     await onEvent?.({ type: 'scene-start', current, total: parts.length, caption });
-    const prompt = buildScenePrompt(style, plan, index, { script, caption, total: parts.length });
+    const prompt = buildScenePrompt(style, plan, index, { script, caption, total: parts.length }, files.length > 0, artPrompt);
     const scene = sceneSeed(seed, current);
-    const source = provider === 'local' ? await generateLocally(prompt, aspectRatio, scene, files) : await generateWithFal(prompt, aspectRatio, scene, referenceUrls[0]);
+    const source = provider === 'local' ? await generateLocally(prompt, aspectRatio, scene, files, { whiteBackground: style.kind === 'white' }) : await generateWithFal(prompt, aspectRatio, scene, referenceUrls[0]);
     if (!source) throw new Error('El motor no devolvió una imagen para esta escena.');
     const stored = await saveStoryboardScene(storyboard.id, {
       sceneId: current,
@@ -201,6 +205,7 @@ export async function POST(request: Request) {
     const interval = Math.min(10, Math.max(2, Number(form.get('intervalSeconds') || 4)));
     const aspectRatio = String(form.get('aspectRatio') || '9:16') as Ratio;
     const styleId = String(form.get('style') || 'monos');
+    const artType = artTypeById(String(form.get('artType') || 'auto'));
     const wantsStream = String(form.get('stream') || '') === '1';
     if (!script) return NextResponse.json({ error: 'Escribe un guion antes de generar.' }, { status: 400 });
     if (!['9:16', '16:9'].includes(aspectRatio)) return NextResponse.json({ error: 'Formato no válido.' }, { status: 400 });
@@ -211,9 +216,9 @@ export async function POST(request: Request) {
     const provider = (process.env.GENERATION_PROVIDER || 'local').toLowerCase();
     const referenceUrls = provider === 'local' ? [] : await uploadReferences(files.slice(0, 4));
     const parts = splitScript(script, interval);
-    const storyboard = await createStoryboard({ script, aspectRatio, intervalSeconds: interval, style: style.id, styleName: style.name });
+    const storyboard = await createStoryboard({ script, aspectRatio, intervalSeconds: interval, style: style.id, styleName: style.name, artType: artType.id });
     storyboardId = storyboard.id;
-    const args: Omit<StoryboardArgs, 'onEvent'> = { script, parts, interval, aspectRatio, seed: Number(process.env.FLUX_BASE_SEED || 481976), provider, files, referenceUrls, storyboard, style };
+    const args: Omit<StoryboardArgs, 'onEvent'> = { script, parts, interval, aspectRatio, seed: Number(process.env.FLUX_BASE_SEED || 481976), provider, files, referenceUrls, storyboard, style, artType };
     if (wantsStream) return streamResponse(args);
     const images = await generateStoryboard(args);
     await updateStoryboardStatus(storyboard.id, 'complete');

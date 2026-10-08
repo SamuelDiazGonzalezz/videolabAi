@@ -9,6 +9,23 @@ export const QUALITY_GUARD = 'Keep anatomy clean and readable: one head and one 
 
 export type StoryPlan = { bible: Record<string, unknown>; scenes: string[] };
 
+// Estilo «Fondo blanco» (vídeos educativos): sujeto aislado sobre blanco puro.
+const WHITE_BACKGROUND = 'Large clear subject placed in the exact center of the frame, filling about two thirds of the image height, on a pure solid white background (#FFFFFF) that fills the rest of the frame; no scenery, no room, no floor, no horizon, no sky, no frame or border, only a very soft contact shadow under objects.';
+
+function whitePrompt(scene: string, plan: StoryPlan | null, hasReferences: boolean, artPrompt = '') {
+  const artStyle = artPrompt
+    ? `${artPrompt}${hasReferences ? ', keeping the characters of the reference images' : ''}`
+    : hasReferences
+    ? 'exactly the drawing style, line work and colors of the reference images, with a plain white background'
+    : planArtStyle(plan) || 'clean, friendly flat vector illustration with soft shading, educational explainer look';
+  return `${artPrompt ? artStyleLead(artPrompt) : ''}${scene} ${WHITE_BACKGROUND} Art style: ${artStyle}. ${OPEN_GUARD}`;
+}
+
+/** Abre el prompt con la técnica elegida: FLUX da más peso a lo que va primero. */
+function artStyleLead(artPrompt: string) {
+  return `${artPrompt.charAt(0).toUpperCase()}${artPrompt.slice(1)}. `;
+}
+
 export function storySetting(fullScript: string) {
   const first = fullScript.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.slice(0, 2).join(' ').trim() || fullScript;
   return first.replace(/\s+/g, ' ').slice(0, 220);
@@ -35,12 +52,14 @@ export function planArtStyle(plan: StoryPlan | null) {
 }
 
 // Prompt de FLUX según el estilo elegido.
-export function buildScenePrompt(style: ReferenceStyle, plan: StoryPlan | null, index: number, fallback: { script: string; caption: string; total: number }) {
+export function buildScenePrompt(style: ReferenceStyle, plan: StoryPlan | null, index: number, fallback: { script: string; caption: string; total: number }, hasReferences = false, artPrompt = '') {
+  if (style.kind === 'white') return whitePrompt(plan?.scenes[index] || `Show clearly, as isolated objects, what this sentence explains: "${fallback.caption}".`, plan, hasReferences, artPrompt);
   if (style.kind === 'monos') {
     return plan ? `${plan.scenes[index]} ${PLANNED_STYLE} ${PLANNED_GUARD}` : buildPrompt(fallback.script, fallback.caption, index + 1, fallback.total);
   }
   const scene = plan?.scenes[index]
     || `Illustrate exactly this story moment (scene ${index + 1} of ${fallback.total}): "${fallback.caption}". Story setting for reference only: "${storySetting(fallback.script)}".`;
+  if (artPrompt) return `${artStyleLead(artPrompt)}${scene} Art style: ${artPrompt}${style.kind === 'custom' ? ', keeping the characters of the reference images' : ''}. ${OPEN_GUARD}`;
   if (style.kind === 'custom') {
     const notes = style.description ? `, ${style.description}` : '';
     return `${scene} Art style: exactly the drawing style, line work and colors of the reference images${notes}. ${OPEN_GUARD}`;
@@ -56,8 +75,10 @@ export function sceneDescription(plan: StoryPlan | null, index: number, caption:
 }
 
 /** Prompt completo a partir de una descripción editada por el usuario en el mapa. */
-export function promptFromDescription(style: ReferenceStyle, description: string, plan: StoryPlan | null) {
+export function promptFromDescription(style: ReferenceStyle, description: string, plan: StoryPlan | null, hasReferences = false, artPrompt = '') {
   const scene = description.trim();
+  if (style.kind === 'white') return whitePrompt(scene, plan, hasReferences, artPrompt);
+  if (artPrompt && style.kind !== 'monos') return `${artStyleLead(artPrompt)}${scene} Art style: ${artPrompt}${style.kind === 'custom' ? ', keeping the characters of the reference images' : ''}. ${OPEN_GUARD}`;
   if (style.kind === 'monos') return `${scene} ${PLANNED_STYLE} ${PLANNED_GUARD}`;
   if (style.kind === 'custom') {
     const notes = style.description ? `, ${style.description}` : '';

@@ -38,6 +38,19 @@ import {
   Zap,
   Clapperboard,
   Network,
+  Lock,
+  Camera,
+  Leaf,
+  Highlighter,
+  Brush,
+  Droplets,
+  Box,
+  Grid3x3,
+  Scissors,
+  PenTool,
+  Shapes,
+  Paintbrush,
+  Frown,
   Pencil,
   Wand2,
   Undo2,
@@ -54,6 +67,7 @@ import {
   ZoomIn,
 } from 'lucide-react';
 import { ELEVENLABS_VOICES, type VoiceOption } from '../lib/voices';
+import { ART_TYPES } from '../lib/artTypes';
 import { NodeMap, type MapImage, type MapState } from './components/NodeMap';
 
 type GeneratedImage = {
@@ -140,6 +154,20 @@ function formatDate(value: string) {
   }
 }
 
+// Modelo de imágenes que tiene cargado el servidor local (se consulta cada 15 s).
+function EngineStatus() {
+  const [engine, setEngine] = useState<{ online: boolean; model: string; fp8: boolean } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const check = () => fetch('/api/engine', { cache: 'no-store' }).then((response) => response.json()).then((data) => { if (!cancelled) setEngine(data); }).catch(() => {});
+    check();
+    const timer = window.setInterval(check, 15_000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, []);
+  const name = engine?.model ? engine.model.split('/').pop()!.replace(/-/g, ' ').replace(/^FLUX\.2 klein/i, 'FLUX.2 Klein') : 'Comprobando…';
+  return <div className="local-engine"><span className={engine?.online === false ? 'offline-dot' : 'online-dot'} /><div><b>GPU local</b><small>{engine?.online === false ? 'Motor apagado' : `${name}${engine?.fp8 ? ' · FP8' : ''}`}</small></div><ChevronDown size={13} /></div>;
+}
+
 function Sidebar({ active, onChange, savedCount, scriptCount }: { active: Section; onChange: (section: Section) => void; savedCount: number; scriptCount: number }) {
   const items: Array<{ id: Section; label: string; icon: typeof Sparkles }> = [
     { id: 'create', label: 'Crear', icon: Sparkles },
@@ -159,7 +187,7 @@ function Sidebar({ active, onChange, savedCount, scriptCount }: { active: Sectio
       <div className="sidebar-label">Sesiones generativas</div>
       <button type="button" className={`session-link${active === 'explore' ? ' active' : ''}`} onClick={() => onChange('explore')}><span className="session-dot" /><span>Mis storyboards</span><small>{savedCount}</small></button><button type="button" className={`session-link${active === 'saved-scripts' ? ' active' : ''}`} onClick={() => onChange('saved-scripts')}><span className="session-dot" /><span>Guiones guardados</span><small>{scriptCount}</small></button>
       <div className="sidebar-bottom">
-        <div className="local-engine"><span className="online-dot" /><div><b>GPU local</b><small>FLUX.2 Klein 4B</small></div><ChevronDown size={13} /></div>
+        <EngineStatus />
         <button type="button" className="user-row"><span className="user-avatar">SM</span><span>Samuel</span><MoreHorizontal size={15} /></button>
       </div>
     </aside>
@@ -183,7 +211,7 @@ function Showcase({ onCreate }: { onCreate: () => void }) {
 }
 
 type ReferenceItem = { id: string; styleId: string; label: string; url: string; sourceName: string };
-type StyleKind = 'monos' | 'free' | 'custom';
+type StyleKind = 'monos' | 'free' | 'white' | 'custom';
 type ReferenceStyle = { id: string; name: string; description: string; kind: StyleKind; builtin: boolean };
 
 const STYLE_STORAGE_KEY = 'videolab.styleId';
@@ -261,11 +289,12 @@ function useEscape(onClose: () => void) {
 function styleHint(style: ReferenceStyle | null) {
   if (!style) return 'Cargando estilos…';
   if (style.kind === 'free') return 'El director decide libremente el estilo de dibujo, los personajes y el mundo según tu guion.';
+  if (style.kind === 'white') return 'Vídeos educativos: cada frase se ilustra con objetos o personajes aislados sobre fondo blanco puro, sin paisaje. Las referencias son opcionales.';
   return style.description || 'Estilo propio: FLUX copia el trazo y los colores de sus referencias.';
 }
 
 function StylePicker({ library, onEdit }: { library: ReferenceLibrary; onEdit: () => void }) {
-  return <div className="style-picker"><div className="control-heading"><span><Palette size={12} /> Estilo</span><small>{library.styles.length} tipos</small></div><div className="style-chips">{library.styles.map((style) => <button type="button" key={style.id} className={library.styleId === style.id ? 'selected' : ''} onClick={() => library.setStyleId(style.id)}>{style.name}{style.kind === 'free' && <em>libre</em>}</button>)}<button type="button" className="style-chip-add" onClick={onEdit} title="Crear o editar estilos"><Plus size={12} /></button></div><small className="control-help">{styleHint(library.style)}</small></div>;
+  return <div className="style-picker"><div className="control-heading"><span><Palette size={12} /> Estilo</span><small>{library.styles.length} tipos</small></div><div className="style-chips">{library.styles.map((style) => <button type="button" key={style.id} className={library.styleId === style.id ? 'selected' : ''} onClick={() => library.setStyleId(style.id)}>{style.name}{style.kind === 'free' && <em>libre</em>}{style.kind === 'white' && <em>educativo</em>}</button>)}<button type="button" className="style-chip-add" onClick={onEdit} title="Crear o editar estilos"><Plus size={12} /></button></div><small className="control-help">{styleHint(library.style)}</small></div>;
 }
 
 function ReferencePicker({ library, onEdit }: { library: ReferenceLibrary; onEdit: () => void }) {
@@ -397,6 +426,20 @@ function ChatDropdown<T extends string | number>({ title, options, value, onChan
       })}
     </div>}
   </div>;
+}
+
+const ART_TYPE_ICONS: Record<string, typeof Sparkles> = {
+  auto: Sparkles, dibujo: PenTool, anime: Wand2, realista: Camera, natural: Leaf, comic: BookOpen, rotulador: Highlighter,
+  cera: Baby, 'mal-pintado': Frown, acuarela: Droplets, lapiz: Pencil, oleo: Paintbrush, '3d': Box, plastilina: Shapes,
+  pixel: Grid3x3, vector: Shapes, papel: Scissors,
+};
+const ART_TYPE_OPTIONS: ChatOption<string>[] = ART_TYPES.map((type) => ({ value: type.id, label: type.label, detail: type.detail, tags: type.tags, icon: ART_TYPE_ICONS[type.id] || Brush }));
+const ART_TYPE_STORAGE_KEY = 'videolab.artType';
+
+function ArtTypePicker({ value, onChange, locked }: { value: string; onChange: (value: string) => void; locked: boolean }) {
+  return <div className="art-type-picker"><div className="control-heading"><span><Brush size={12} /> Tipo de imagen</span><small>{locked ? 'fijado por Monos' : `${ART_TYPES.length - 1} técnicas`}</small></div>{locked
+    ? <div className="art-type-locked">Monos usa siempre su propio dibujo (lo marcan sus referencias). Elige «En blanco», «Fondo blanco» o un estilo propio para cambiar la técnica.</div>
+    : <ChatDropdown title="Técnica de las imágenes" options={ART_TYPE_OPTIONS} value={value} onChange={onChange} />}</div>;
 }
 
 // El modelo responde «Título: …» en la primera línea y después el guion.
@@ -614,9 +657,9 @@ function SceneEditDialog({ image, onClose, onSubmit, onUndo }: { image: Generate
     <div className="scene-edit__preview"><img src={image.url} alt={`Escena ${image.sceneId}`} />{editCount > 0 && <span className="scene-edit__badge">Editada {editCount}×</span>}</div>
     <div className="scene-edit__form">
       <span className="eyebrow">ESCENA {String(image.sceneId).padStart(2, '0')} · EDITAR CON IA</span>
-      <h2 id="sceneEditTitle">¿Qué quieres cambiar?</h2>
-      <p>Describe el arreglo. FLUX mantendrá el resto de la imagen igual: personajes, encuadre, colores y estilo.</p>
-      <textarea value={instruction} autoFocus maxLength={600} onChange={(event) => setInstruction(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) submit(); }} placeholder="Por ejemplo: el niño tiene tres manos, quítale la que sale del hombro izquierdo" />
+      <h2 id="sceneEditTitle">¿Qué está mal o qué quieres cambiar?</h2>
+      <p>Describe el problema («el niño está dentro de la tortuga», «tiene tres manos») o da la orden («ponle una gorra azul»). El director decide: los retoques pequeños se aplican sobre la imagen y los fallos de postura, posición o anatomía se corrigen redibujando la escena.</p>
+      <textarea value={instruction} autoFocus maxLength={600} onChange={(event) => setInstruction(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) submit(); }} placeholder="Por ejemplo: el niño está fundido con la tortuga, tienen que estar separados" />
       <div className="scene-edit__chips">{EDIT_SUGGESTIONS.map((suggestion) => <button type="button" key={suggestion} onClick={() => setInstruction(suggestion)}>{suggestion}</button>)}</div>
       {lastEdit && <small className="scene-edit__last">Última edición: «{lastEdit.instruction}»</small>}
       <div className="scene-edit__actions">
@@ -634,8 +677,12 @@ function ConfirmDialog({ title, message, confirmLabel, busy, onConfirm, onCancel
 
 const VOICE_STORAGE_KEY = 'racingmonos.voiceId';
 
-function VoicePicker({ voices, voiceId, onChange, notice }: { voices: VoiceOption[]; voiceId: string; onChange: (id: string) => void; notice: string }) {
+type VoiceQuota = { used: number; limit: number; resetsAt: number | null } | null;
+
+function VoicePicker({ voices, voiceId, onChange, notice, quota, freePlan, scriptLength }: { voices: VoiceOption[]; voiceId: string; onChange: (id: string) => void; notice: string; quota: VoiceQuota; freePlan: boolean; scriptLength: number }) {
   const [playing, setPlaying] = useState('');
+  const [filter, setFilter] = useState('Disponibles');
+  const [search, setSearch] = useState('');
   const [player] = useState(() => (typeof Audio === 'undefined' ? null : new Audio()));
   useEffect(() => {
     if (!player) return;
@@ -650,39 +697,67 @@ function VoicePicker({ voices, voiceId, onChange, notice }: { voices: VoiceOptio
     player.src = voice.previewUrl;
     void player.play().then(() => setPlaying(voice.id)).catch(() => setPlaying(''));
   };
-  return <><div className="voice-picker">{voices.map((voice) => <div key={voice.id} className={`voice-option ${voiceId === voice.id ? 'selected' : ''}`}><button type="button" className="voice-select" onClick={() => onChange(voice.id)}><span className="voice-icon"><Volume2 size={13} /></span><span><b>{voice.name}{voice.spanish && <em className="voice-tag">ES</em>}</b><small>{voice.detail}</small></span>{voiceId === voice.id && <Check size={14} />}</button>{voice.previewUrl && <button type="button" className="voice-preview" aria-label={`Escuchar ${voice.name}`} onClick={() => togglePreview(voice)}>{playing === voice.id ? <Pause size={12} /> : <Play size={12} />}</button>}</div>)}</div>{notice && <div className="voice-notice">{notice}</div>}</>;
+  // Filtros: las que se pueden usar ya, y luego cada acento de la biblioteca.
+  const accents = useMemo(() => {
+    const counts = new Map<string, number>();
+    voices.forEach((voice) => { const key = voice.accent || 'Español'; counts.set(key, (counts.get(key) || 0) + 1); });
+    return [...counts.entries()].sort((first, second) => second[1] - first[1]).map(([accent]) => accent);
+  }, [voices]);
+  const usable = voices.filter((voice) => !voice.locked);
+  const query = search.trim().toLowerCase();
+  const shown = voices
+    .filter((voice) => filter === 'Disponibles' ? !voice.locked : filter === 'Todas' ? true : (voice.accent || 'Español') === filter)
+    .filter((voice) => !query || `${voice.name} ${voice.detail}`.toLowerCase().includes(query))
+    .sort((first, second) => Number(Boolean(first.locked)) - Number(Boolean(second.locked)));
+  const remaining = quota ? Math.max(0, quota.limit - quota.used) : null;
+  return <>
+    <div className="voice-filters">
+      {['Disponibles', 'Todas', ...accents].map((item) => <button type="button" key={item} className={filter === item ? 'selected' : ''} onClick={() => setFilter(item)}>{item}{item === 'Disponibles' && <small>{usable.length}</small>}</button>)}
+    </div>
+    {voices.length > 8 && <input className="voice-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={`Buscar entre ${voices.length} voces en español…`} />}
+    <div className="voice-picker">{shown.map((voice) => <div key={voice.id} className={`voice-option ${voiceId === voice.id ? 'selected' : ''}${voice.locked ? ' is-locked' : ''}`}><button type="button" className="voice-select" onClick={() => !voice.locked && onChange(voice.id)} disabled={voice.locked} title={voice.locked ? 'Voz de la biblioteca de ElevenLabs: requiere un plan de pago para usarla por API' : undefined}><span className="voice-icon">{voice.locked ? <Lock size={12} /> : <Volume2 size={13} />}</span><span><b>{voice.name}<em className="voice-tag">{voice.accent || 'ES'}</em></b><small>{voice.detail}</small></span>{voiceId === voice.id && <Check size={14} />}</button>{voice.previewUrl && <button type="button" className="voice-preview" aria-label={`Escuchar ${voice.name}`} onClick={() => togglePreview(voice)}>{playing === voice.id ? <Pause size={12} /> : <Play size={12} />}</button>}</div>)}{!shown.length && <div className="voice-empty">No hay voces con este filtro.</div>}</div>
+    {remaining !== null && <div className={`voice-quota${scriptLength > remaining ? ' is-short' : ''}`}><span>Te quedan <b>{remaining.toLocaleString('es-ES')}</b> de {quota!.limit.toLocaleString('es-ES')} caracteres este mes{quota!.resetsAt ? ` · se renueva el ${new Date(quota!.resetsAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}` : ''}</span>{scriptLength > remaining && <small>Este guion ocupa {scriptLength.toLocaleString('es-ES')} caracteres: no hay cuota suficiente para narrarlo entero.</small>}</div>}
+    {freePlan && <div className="voice-notice">Plan gratuito de ElevenLabs: puedes usar las voces sin candado. Las {voices.filter((voice) => voice.locked).length} voces nativas de la biblioteca (España, México, Argentina…) necesitan un plan de pago; puedes escucharlas igualmente.</div>}
+    {notice && <div className="voice-notice">{notice}</div>}
+  </>;
 }
 
 function useVoices() {
   const [voices, setVoices] = useState<VoiceOption[]>(ELEVENLABS_VOICES);
   const [voiceId, setVoiceIdState] = useState<string>(ELEVENLABS_VOICES[0].id);
   const [voiceNotice, setVoiceNotice] = useState('');
+  const [quota, setQuota] = useState<VoiceQuota>(null);
+  const [freePlan, setFreePlan] = useState(false);
   const setVoiceId = (id: string) => { setVoiceIdState(id); try { localStorage.setItem(VOICE_STORAGE_KEY, id); } catch {} };
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/voices').then((response) => response.json()).then((data: { configured?: boolean; voices?: VoiceOption[]; defaultVoiceId?: string; error?: string }) => {
+    fetch('/api/voices').then((response) => response.json()).then((data: { configured?: boolean; voices?: VoiceOption[]; defaultVoiceId?: string; error?: string; characters?: VoiceQuota; freePlan?: boolean }) => {
       if (cancelled) return;
       const list = Array.isArray(data.voices) && data.voices.length ? data.voices : ELEVENLABS_VOICES;
       setVoices(list);
+      setQuota(data.characters || null);
+      setFreePlan(Boolean(data.freePlan));
       let stored = '';
       try { stored = localStorage.getItem(VOICE_STORAGE_KEY) || ''; } catch {}
-      const preferred = [stored, data.defaultVoiceId].find((id) => id && list.some((voice) => voice.id === id));
+      const preferred = [stored, data.defaultVoiceId].find((id) => id && list.some((voice) => voice.id === id && !voice.locked));
       setVoiceIdState(preferred || list[0].id);
       if (!data.configured) setVoiceNotice('Añade ELEVENLABS_API_KEY en .env.local para cargar tus voces y generar la narración.');
       else if (data.error) setVoiceNotice(`No se pudieron cargar tus voces: ${data.error}`);
-      else if (!list.some((voice) => voice.spanish)) setVoiceNotice('Tu cuenta no tiene voces nativas en español: añádelas desde la Voice Library de ElevenLabs y aparecerán aquí.');
     }).catch(() => {});
     return () => { cancelled = true; };
   }, []);
-  const voiceName = voices.find((voice) => voice.id === voiceId)?.name || voiceId;
-  return { voices, voiceId, setVoiceId, voiceNotice, voiceName };
+  const selectedVoice = voices.find((voice) => voice.id === voiceId);
+  const voiceName = selectedVoice?.name || voiceId;
+  // Las voces de la biblioteca se envían con su propietario para añadirlas a la cuenta.
+  const libraryOwnerId = selectedVoice?.source === 'library' ? selectedVoice.ownerId || '' : '';
+  return { voices, voiceId, setVoiceId, voiceNotice, voiceName, libraryOwnerId, quota, freePlan };
 }
 
 type VoiceControls = ReturnType<typeof useVoices>;
 
 // Genera (o regenera con otra voz) la narración de un storyboard con ElevenLabs.
-async function requestNarration(storyboardId: string, script: string, voiceId: string, voiceName: string) {
-  const response = await fetch(`/api/storyboards/${storyboardId}/voice`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ script, voiceId, voiceName }) });
+async function requestNarration(storyboardId: string, script: string, voiceId: string, voiceName: string, libraryOwnerId = '') {
+  const response = await fetch(`/api/storyboards/${storyboardId}/voice`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ script, voiceId, voiceName, libraryOwnerId }) });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.error || 'No se pudo generar la voz.');
   return String(payload.voiceName || voiceName);
@@ -691,6 +766,9 @@ async function requestNarration(storyboardId: string, script: string, voiceId: s
 function PromptPanel({ voice, references, onEditReferences, incomingScript, onImage, onReset, onProgress, onFinished, onStoryboardId, onVoiceState }: { voice: VoiceControls; references: ReferenceLibrary; onEditReferences: () => void; incomingScript: { text: string; nonce: number } | null; onImage: (image: GeneratedImage) => void; onReset: () => void; onProgress: (progress: GenerationProgress) => void; onFinished: () => void; onStoryboardId: (id: string) => void; onVoiceState: (state: VoiceState) => void }) {
   const [script, setScript] = useState('Fuji, 1976. Dos monos pilotos se preparan para la carrera bajo la lluvia. El mono de chaqueta roja aprieta los puños. El semáforo cambia y los dos coches salen disparados. En la última curva, el piloto rojo adelanta por el interior y cruza la meta celebrando.');
   const [interval, setIntervalValue] = useState(4);
+  const [artType, setArtTypeState] = useState('auto');
+  useEffect(() => { try { const stored = localStorage.getItem(ART_TYPE_STORAGE_KEY); if (stored && ART_TYPES.some((type) => type.id === stored)) setArtTypeState(stored); } catch {} }, []);
+  const setArtType = (value: string) => { setArtTypeState(value); try { localStorage.setItem(ART_TYPE_STORAGE_KEY, value); } catch {} };
   useEffect(() => { if (incomingScript) setScript(incomingScript.text.slice(0, SCRIPT_LIMIT)); }, [incomingScript]);
   const [ratio, setRatio] = useState<'9:16' | '16:9'>('9:16');
   const { voices, voiceId, setVoiceId, voiceNotice, voiceName } = voice;
@@ -711,6 +789,7 @@ function PromptPanel({ voice, references, onEditReferences, incomingScript, onIm
       form.append('intervalSeconds', String(interval));
       form.append('aspectRatio', ratio);
       form.append('style', references.styleId);
+      form.append('artType', references.style?.kind === 'monos' ? 'auto' : artType);
       form.append('stream', '1');
       const response = await fetch('/api/generate-images', { method: 'POST', body: form });
       if (!response.ok) { const data = await response.json(); throw new Error(data.error || 'No se pudo generar el storyboard'); }
@@ -728,7 +807,7 @@ function PromptPanel({ voice, references, onEditReferences, incomingScript, onIm
           onVoiceState({ status: 'generating', name: voiceName });
           onProgress({ current: event.total, total: event.total, status: 'generating', caption: 'Sintetizando voz con ElevenLabs…' });
           try {
-            onVoiceState({ status: 'ready', name: await requestNarration(event.storyboardId, script, voiceId, voiceName) });
+            onVoiceState({ status: 'ready', name: await requestNarration(event.storyboardId, script, voiceId, voiceName, voice.libraryOwnerId) });
           } catch (voiceError) {
             onVoiceState({ status: 'error', name: voiceName, error: voiceError instanceof Error ? voiceError.message : 'No se pudo generar la voz.' });
           }
@@ -753,7 +832,7 @@ function PromptPanel({ voice, references, onEditReferences, incomingScript, onIm
     } finally { setLoading(false); onFinished(); }
   }
 
-  return <section className="prompt-card"><div className="card-topline"><span className="eyebrow"><WandSparkles size={12} /> NUEVA CREACIÓN</span><span className="draft-state"><span /> Guardado local</span></div><div className="prompt-title"><h2>Del guion a tu storyboard</h2><p>{references.style?.kind === 'free' ? `Una ilustración cada ${interval} segundos; el director elige el estilo y los personajes según tu guion.` : `Una ilustración cada ${interval} segundos con el estilo ${references.style?.name || 'Monos'} siempre consistente.`}</p></div><div className="control-heading"><span>Guion</span><small>{script.length}/{SCRIPT_LIMIT}</small></div><textarea className="script-input" value={script} onChange={(event) => setScript(event.target.value.slice(0, SCRIPT_LIMIT))} placeholder="Pega aquí tu guion completo…" /><div className="script-hint"><Clock3 size={12} /> La IA lo dividirá en {sceneCount} escenas aproximadas</div><StylePicker library={references} onEdit={onEditReferences} /><ReferencePicker library={references} onEdit={onEditReferences} /><div className="control-heading voice-heading"><span><Volume2 size={12} /> Voz española</span><small>ElevenLabs</small></div><VoicePicker voices={voices} voiceId={voiceId} onChange={setVoiceId} notice={voiceNotice} /><div className="control-grid"><div><div className="control-heading"><span>Duración por imagen</span></div><div className="segmented">{[3, 4, 5].map((seconds) => <button type="button" key={seconds} className={interval === seconds ? 'selected' : ''} onClick={() => setIntervalValue(seconds)}>{seconds}s</button>)}</div></div><div><div className="control-heading"><span>Formato</span></div><div className="segmented ratio-segment">{(['9:16', '16:9'] as const).map((value) => <button type="button" key={value} className={ratio === value ? 'selected' : ''} onClick={() => setRatio(value)}>{value}</button>)}</div></div></div>{error && <div className="error-box">{error}</div>}<button type="button" className="primary-action" onClick={generate} disabled={loading}>{loading ? <><Loader2 size={16} className="spin" /> Generando escenas…</> : <><Sparkles size={16} /> Generar storyboard <span>{sceneCount}</span></>}</button><div className="prompt-footer"><span><span className="green-dot" /> FLUX.2 Klein 4B</span><span><Volume2 size={11} /> Voz al finalizar</span></div></section>;
+  return <section className="prompt-card"><div className="card-topline"><span className="eyebrow"><WandSparkles size={12} /> NUEVA CREACIÓN</span><span className="draft-state"><span /> Guardado local</span></div><div className="prompt-title"><h2>Del guion a tu storyboard</h2><p>{references.style?.kind === 'free' ? `Una ilustración cada ${interval} segundos; el director elige el estilo y los personajes según tu guion.` : `Una ilustración cada ${interval} segundos con el estilo ${references.style?.name || 'Monos'} siempre consistente.`}</p></div><div className="control-heading"><span>Guion</span><small>{script.length}/{SCRIPT_LIMIT}</small></div><textarea className="script-input" value={script} onChange={(event) => setScript(event.target.value.slice(0, SCRIPT_LIMIT))} placeholder="Pega aquí tu guion completo…" /><div className="script-hint"><Clock3 size={12} /> La IA lo dividirá en {sceneCount} escenas aproximadas</div><StylePicker library={references} onEdit={onEditReferences} /><ArtTypePicker value={artType} onChange={setArtType} locked={references.style?.kind === 'monos'} /><ReferencePicker library={references} onEdit={onEditReferences} /><div className="control-heading voice-heading"><span><Volume2 size={12} /> Voz española</span><small>ElevenLabs</small></div><VoicePicker voices={voices} voiceId={voiceId} onChange={setVoiceId} notice={voiceNotice} quota={voice.quota} freePlan={voice.freePlan} scriptLength={script.length} /><div className="control-grid"><div><div className="control-heading"><span>Duración por imagen</span></div><div className="segmented">{[3, 4, 5].map((seconds) => <button type="button" key={seconds} className={interval === seconds ? 'selected' : ''} onClick={() => setIntervalValue(seconds)}>{seconds}s</button>)}</div></div><div><div className="control-heading"><span>Formato</span></div><div className="segmented ratio-segment">{(['9:16', '16:9'] as const).map((value) => <button type="button" key={value} className={ratio === value ? 'selected' : ''} onClick={() => setRatio(value)}>{value}</button>)}</div></div></div>{error && <div className="error-box">{error}</div>}<button type="button" className="primary-action" onClick={generate} disabled={loading}>{loading ? <><Loader2 size={16} className="spin" /> Generando escenas…</> : <><Sparkles size={16} /> Generar storyboard <span>{sceneCount}</span></>}</button><div className="prompt-footer"><span><span className="green-dot" /> FLUX.2 Klein 4B</span><span><Volume2 size={11} /> Voz al finalizar</span></div></section>;
 }
 
 function EmptyGallery({ onCreate }: { onCreate: () => void }) {
@@ -811,6 +890,13 @@ export default function ImageLab() {
   const [editTarget, setEditTarget] = useState<GeneratedImage | null>(null);
   const [editingScenes, setEditingScenes] = useState<Record<number, boolean>>({});
   const [editErrors, setEditErrors] = useState<Record<number, string>>({});
+  // Aviso flotante: los fallos de edición no deben quedar escondidos en una etiqueta.
+  const [toast, setToast] = useState<{ text: string; kind: 'error' | 'ok' } | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(null), toast.kind === 'error' ? 12_000 : 4000);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
   const closeEditDialog = useCallback(() => setEditTarget(null), []);
   const savedScripts = useSavedScripts();
   const [incomingScript, setIncomingScript] = useState<{ text: string; nonce: number } | null>(null);
@@ -841,7 +927,7 @@ export default function ImageLab() {
     const script = record?.script || images.map((image) => image.caption).join(' ');
     setVoiceState({ status: 'generating', name: voice.voiceName });
     try {
-      setVoiceState({ status: 'ready', name: await requestNarration(currentStoryboardId, script, voice.voiceId, voice.voiceName) });
+      setVoiceState({ status: 'ready', name: await requestNarration(currentStoryboardId, script, voice.voiceId, voice.voiceName, voice.libraryOwnerId) });
       refreshRecords();
     } catch (error) {
       setVoiceState({ status: 'error', name: voice.voiceName, error: error instanceof Error ? error.message : 'No se pudo generar la voz.' });
@@ -885,8 +971,11 @@ export default function ImageLab() {
       await new Promise<void>((resolve) => { const preload = new Image(); preload.onload = () => resolve(); preload.onerror = () => resolve(); preload.src = updated.url; });
       setImages((current) => current.map((item) => item.sceneId === updated.sceneId ? { ...item, ...updated } : item));
       refreshRecords();
+      if (data.mode) setToast({ kind: 'ok', text: `Escena ${String(image.sceneId).padStart(2, '0')} ${data.mode === 'regenerate' ? 'redibujada' : 'retocada'}${data.problem ? `: ${data.problem}` : '.'}` });
     } catch (error) {
-      setEditErrors((current) => ({ ...current, [image.sceneId]: error instanceof Error ? error.message : 'No se pudo editar la imagen.' }));
+      const message = error instanceof Error ? error.message : 'No se pudo editar la imagen.';
+      setEditErrors((current) => ({ ...current, [image.sceneId]: message }));
+      setToast({ kind: 'error', text: `Escena ${String(image.sceneId).padStart(2, '0')}: ${message}` });
     } finally {
       setEditingScenes((current) => { const next = { ...current }; delete next[image.sceneId]; return next; });
     }
@@ -929,5 +1018,5 @@ export default function ImageLab() {
     window.setTimeout(() => document.querySelector('.prompt-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
   };
 
-  return <div className="app-shell"><div className={`sidebar-wrap ${sidebarOpen ? 'open' : ''}`}><Sidebar active={active} onChange={navigate} savedCount={records.length} scriptCount={savedScripts.scripts.length} /></div><div className="app-main"><TopBar active={active} onMenu={() => setSidebarOpen((value) => !value)} /><main className="main-content">{active === 'create' && <><Showcase onCreate={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })} /><div className="content-tabs"><button className="active" type="button">Showroom</button><button type="button" onClick={() => navigate('explore')}>Mis proyectos</button><button type="button" onClick={() => navigate('assets')}>Assets</button><span className="tab-spacer" /><span className="workspace-status"><span className="online-dot" /> Local workspace</span></div><div className="workspace-grid"><PromptPanel voice={voice} incomingScript={incomingScript} references={referenceLibrary} onEditReferences={() => setEditingReferences(true)} onReset={() => { setImages([]); setCurrentStoryboardId(null); setGenerating(true); }} onImage={(image) => setImages((current) => [...current.filter((item) => item.sceneId !== image.sceneId), image].sort((a, b) => a.sceneId - b.sceneId))} onProgress={(next) => { setProgress(next); setGenerating(next.status === 'generating'); }} onFinished={() => { setGenerating(false); refreshRecords(); }} onStoryboardId={setCurrentStoryboardId} onVoiceState={setVoiceState} /><Gallery images={images} onDownload={download} onOpen={setSelectedImage} onDownloadImage={downloadImage} progress={progress} generating={generating} onCreate={() => window.scrollTo({ top: 0, behavior: 'smooth' })} storyboardId={currentStoryboardId} record={currentRecord} onSaveMap={saveMap} onRegenerate={(image, description) => runSceneEdit(image, { action: 'regenerate', description })} onEditImage={setEditTarget} editingScenes={editingScenes} editErrors={editErrors} voiceState={voiceState} selectedVoiceName={voice.voiceName} onGenerateVoice={generateVoice} /></div></>}{active === 'explore' && <LibraryView records={records} onOpen={loadRecord} onDelete={setStoryboardToDelete} />}{active === 'scripts' && <ScriptStudio library={savedScripts} onUseScript={sendScriptToStoryboard} />}{active === 'saved-scripts' && <SavedScriptsView library={savedScripts} onUseScript={sendScriptToStoryboard} />}{active === 'assets' && <AssetsView records={records} references={referenceLibrary.references} styles={referenceLibrary.styles} />}{active === 'elements' && <ElementsView />}</main></div>{editTarget && <SceneEditDialog image={editTarget} onClose={closeEditDialog} onSubmit={(instruction) => runSceneEdit(editTarget, { instruction })} onUndo={() => runSceneEdit(editTarget, { action: 'undo' })} />}{editingReferences && <ReferenceManager library={referenceLibrary} initialFilter={referenceLibrary.styleId} onClose={closeReferenceEditor} />}{storyboardToDelete && <ConfirmDialog title="Eliminar storyboard" message={`Se borrará «${storyboardToDelete.title}» por completo: ${storyboardToDelete.images.length} imágenes${storyboardToDelete.audioUrl ? ', la narración' : ''}, el montaje del editor y los vídeos exportados. No se puede deshacer.`} confirmLabel="Eliminar todo" busy={deletingStoryboard} onConfirm={confirmDeleteStoryboard} onCancel={cancelDelete} />}{selectedImage && <ImageModal image={selectedImage} onClose={() => setSelectedImage(null)} onDownload={downloadImage} />}</div>;
+  return <div className="app-shell"><div className={`sidebar-wrap ${sidebarOpen ? 'open' : ''}`}><Sidebar active={active} onChange={navigate} savedCount={records.length} scriptCount={savedScripts.scripts.length} /></div><div className="app-main"><TopBar active={active} onMenu={() => setSidebarOpen((value) => !value)} /><main className="main-content">{active === 'create' && <><Showcase onCreate={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })} /><div className="content-tabs"><button className="active" type="button">Showroom</button><button type="button" onClick={() => navigate('explore')}>Mis proyectos</button><button type="button" onClick={() => navigate('assets')}>Assets</button><span className="tab-spacer" /><span className="workspace-status"><span className="online-dot" /> Local workspace</span></div><div className="workspace-grid"><PromptPanel voice={voice} incomingScript={incomingScript} references={referenceLibrary} onEditReferences={() => setEditingReferences(true)} onReset={() => { setImages([]); setCurrentStoryboardId(null); setGenerating(true); }} onImage={(image) => setImages((current) => [...current.filter((item) => item.sceneId !== image.sceneId), image].sort((a, b) => a.sceneId - b.sceneId))} onProgress={(next) => { setProgress(next); setGenerating(next.status === 'generating'); }} onFinished={() => { setGenerating(false); refreshRecords(); }} onStoryboardId={setCurrentStoryboardId} onVoiceState={setVoiceState} /><Gallery images={images} onDownload={download} onOpen={setSelectedImage} onDownloadImage={downloadImage} progress={progress} generating={generating} onCreate={() => window.scrollTo({ top: 0, behavior: 'smooth' })} storyboardId={currentStoryboardId} record={currentRecord} onSaveMap={saveMap} onRegenerate={(image, description) => runSceneEdit(image, { action: 'regenerate', description })} onEditImage={setEditTarget} editingScenes={editingScenes} editErrors={editErrors} voiceState={voiceState} selectedVoiceName={voice.voiceName} onGenerateVoice={generateVoice} /></div></>}{active === 'explore' && <LibraryView records={records} onOpen={loadRecord} onDelete={setStoryboardToDelete} />}{active === 'scripts' && <ScriptStudio library={savedScripts} onUseScript={sendScriptToStoryboard} />}{active === 'saved-scripts' && <SavedScriptsView library={savedScripts} onUseScript={sendScriptToStoryboard} />}{active === 'assets' && <AssetsView records={records} references={referenceLibrary.references} styles={referenceLibrary.styles} />}{active === 'elements' && <ElementsView />}</main></div>{toast && <div className={`app-toast app-toast--${toast.kind}`} role="status"><span>{toast.text}</span><button type="button" onClick={() => setToast(null)} aria-label="Cerrar aviso"><X size={14} /></button></div>}{editTarget && <SceneEditDialog image={editTarget} onClose={closeEditDialog} onSubmit={(instruction) => runSceneEdit(editTarget, { instruction })} onUndo={() => runSceneEdit(editTarget, { action: 'undo' })} />}{editingReferences && <ReferenceManager library={referenceLibrary} initialFilter={referenceLibrary.styleId} onClose={closeReferenceEditor} />}{storyboardToDelete && <ConfirmDialog title="Eliminar storyboard" message={`Se borrará «${storyboardToDelete.title}» por completo: ${storyboardToDelete.images.length} imágenes${storyboardToDelete.audioUrl ? ', la narración' : ''}, el montaje del editor y los vídeos exportados. No se puede deshacer.`} confirmLabel="Eliminar todo" busy={deletingStoryboard} onConfirm={confirmDeleteStoryboard} onCancel={cancelDelete} />}{selectedImage && <ImageModal image={selectedImage} onClose={() => setSelectedImage(null)} onDownload={downloadImage} />}</div>;
 }

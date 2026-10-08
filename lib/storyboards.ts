@@ -26,6 +26,8 @@ export type StoryboardRecord = {
   /** Id del estilo de referencias usado (monos, blank o uno propio). */
   style: string;
   styleName?: string;
+  /** Tipo de imagen elegido (dibujo, anime, realista…); ver lib/artTypes.ts. */
+  artType?: string;
   status: 'generating' | 'complete' | 'error';
   createdAt: string;
   updatedAt: string;
@@ -71,6 +73,7 @@ export async function createStoryboard(input: {
   intervalSeconds: number;
   style: string;
   styleName?: string;
+  artType?: string;
 }) {
   const id = randomUUID();
   const now = new Date().toISOString();
@@ -82,6 +85,7 @@ export async function createStoryboard(input: {
     intervalSeconds: input.intervalSeconds,
     style: input.style,
     styleName: input.styleName,
+    artType: input.artType,
     status: 'generating',
     createdAt: now,
     updatedAt: now,

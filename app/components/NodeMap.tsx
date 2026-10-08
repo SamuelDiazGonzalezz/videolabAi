@@ -144,6 +144,14 @@ export function NodeMap({ storyboardKey, images, script, styleName, aspectRatio,
   const [linking, setLinking] = useState<{ from: string; point: Point } | null>(null);
   const [drafts, setDrafts] = useState<Record<number, string>>({});
   const [fullscreen, setFullscreen] = useState(false);
+  // Marca el lienzo como «en movimiento» mientras dura un zoom o un arrastre.
+  const [moving, setMoving] = useState(false);
+  const movingTimer = useRef<number | null>(null);
+  const markMoving = useCallback(() => {
+    setMoving(true);
+    if (movingTimer.current) window.clearTimeout(movingTimer.current);
+    movingTimer.current = window.setTimeout(() => setMoving(false), 180);
+  }, []);
   const [newNoteId, setNewNoteId] = useState<string | null>(null);
   const dragRef = useRef<{ kind: 'pan' | 'node' | 'note'; id?: string; start: Point; origin: Point; moved: boolean } | null>(null);
   const fittedRef = useRef(false);
@@ -241,11 +249,12 @@ export function NodeMap({ storyboardKey, images, script, styleName, aspectRatio,
       const field = (event.target as HTMLElement).closest('textarea');
       if (field && field.scrollHeight > field.clientHeight) return;
       event.preventDefault();
+      markMoving();
       zoomAt(Math.exp(-event.deltaY * 0.0015), event.clientX, event.clientY);
     };
     element.addEventListener('wheel', onWheel, { passive: false });
     return () => element.removeEventListener('wheel', onWheel);
-  }, [zoomAt]);
+  }, [zoomAt, markMoving]);
 
   const removeSelection = useCallback(() => {
     if (!selection) return;
@@ -315,7 +324,7 @@ export function NodeMap({ storyboardKey, images, script, styleName, aspectRatio,
     const dx = event.clientX - drag.start.x;
     const dy = event.clientY - drag.start.y;
     if (Math.abs(dx) + Math.abs(dy) > 2) drag.moved = true;
-    if (drag.kind === 'pan') { setViewport((current) => ({ ...current, x: drag.origin.x + dx, y: drag.origin.y + dy })); return; }
+    if (drag.kind === 'pan') { markMoving(); setViewport((current) => ({ ...current, x: drag.origin.x + dx, y: drag.origin.y + dy })); return; }
     const next = { x: drag.origin.x + dx / viewport.zoom, y: drag.origin.y + dy / viewport.zoom };
     if (drag.kind === 'node' && drag.id) setState((current) => ({ ...current, positions: { ...current.positions, [drag.id!]: next } }));
     if (drag.kind === 'note' && drag.id) setState((current) => ({ ...current, notes: current.notes.map((note) => note.id === drag.id ? { ...note, ...next } : note) }));
@@ -345,7 +354,7 @@ export function NodeMap({ storyboardKey, images, script, styleName, aspectRatio,
   const lastImage = images[images.length - 1];
   const ghost = generating && lastImage ? (() => { const p = position(`image-${lastImage.sceneId}`); return { x: p.x + imageW + 120, y: p.y }; })() : null;
 
-  return <div className={`node-map tool-${tool}${linking ? ' is-linking' : ''}${fullscreen ? ' is-fullscreen' : ''}`} ref={containerRef} onPointerDown={onCanvasPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
+  return <div className={`node-map tool-${tool}${linking ? ' is-linking' : ''}${fullscreen ? ' is-fullscreen' : ''}${moving ? ' is-moving' : ''}`} ref={containerRef} onPointerDown={onCanvasPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
     <video className="node-map__video" src="/assets/mapa-bg.mp4" autoPlay muted loop playsInline aria-hidden="true" />
     <div className="node-map__dots" style={{ backgroundSize: `${22 * viewport.zoom}px ${22 * viewport.zoom}px`, backgroundPosition: `${viewport.x}px ${viewport.y}px` }} aria-hidden="true" />
     <div className="node-map__world" style={{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})` }}>

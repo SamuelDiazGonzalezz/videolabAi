@@ -116,3 +116,21 @@ Al generar, el panel de escenas muestra por defecto un **mapa de nodos** (select
 - Notas amarillas con la herramienta nota (N); restaurar disposición, encuadrar, zoom y pantalla completa en la barra inferior.
 
 La disposición (posiciones, conexiones, notas y vista) se guarda en `storyboard.json` (`mapState`) mediante `/api/storyboards/<id>/map`.
+
+## Modelo de imágenes: Klein 4B o 9B
+
+El modelo se elige en `.env.local` con `LOCAL_FLUX_MODEL` (lo leen `npm run dev` y `start-local.ps1`). Por defecto está configurado **FLUX.2 Klein 9B**, que dibuja mejor (anatomía, seguir el prompt) y trae Qwen3-8B como director/escritor:
+
+- Pesa ~35 GB y no cabe tal cual en 16 GB de VRAM: con `LOCAL_FLUX_FP8=auto` el servidor guarda generador y codificador en FP8 (~9 GB + ~8,5 GB) y calcula en bf16. Cada imagen tarda aproximadamente el doble que con el 4B.
+- **Licencia no comercial** (FLUX Non-Commercial License) y descarga protegida: acepta la licencia en https://huggingface.co/black-forest-labs/FLUX.2-klein-9B, crea un token de lectura en https://huggingface.co/settings/tokens y ejecuta `.\.venv\Scripts\hf.exe auth login`.
+- Si el 9B no está descargado o falla al cargar, el servidor vuelve automáticamente a **Klein 4B** (Apache 2.0). Para usar siempre el 4B, pon `LOCAL_FLUX_MODEL=black-forest-labs/FLUX.2-klein-4B`.
+
+El menú lateral (GPU local) muestra el modelo cargado en cada momento.
+
+## Estilo «Fondo blanco» (vídeos educativos)
+
+Estilo integrado para explicadores: el director ilustra cada frase con objetos, personajes o pequeños esquemas **aislados sobre fondo blanco puro**, sin paisaje ni suelo, mostrando solo el concepto de esa frase. El servidor FLUX deja el fondo en #FFFFFF exacto (`white_background=1`: los tonos casi blancos pasan a blanco puro) y recentra y agranda el sujeto. Admite referencias opcionales (Editar → Fondo blanco) para fijar un estilo de dibujo; sin ellas el director elige un estilo limpio tipo vector. Las ediciones y regeneraciones de escenas de este estilo también mantienen el fondo blanco.
+
+## Tipo de imagen
+
+En el panel de creación, **Tipo de imagen** fija la técnica de todas las escenas: Automático (el director decide), Dibujo, Anime, Realista, Natural, Cómic, Rotulador, Ceras, Mal pintado, Acuarela, Lápiz, Óleo, Animación 3D, Plastilina, Pixel art, Vector plano o Recortes de papel (`lib/artTypes.ts`). La técnica se pasa al director (`medium` en `/plan`) y abre el prompt de FLUX; se guarda en el storyboard (`artType`) y se reutiliza al regenerar o redibujar escenas. En **Monos** está desactivado porque el dibujo lo marcan sus referencias; con un estilo propio con referencias, la técnica cambia el acabado manteniendo sus personajes.

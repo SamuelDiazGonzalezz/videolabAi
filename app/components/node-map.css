@@ -5,7 +5,11 @@
 .node-map.tool-note{cursor:crosshair}
 .node-map__video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55;pointer-events:none}
 .node-map__dots{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle,rgba(255,255,255,.13) 1px,transparent 1.3px);mix-blend-mode:screen}
-.node-map__world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+.node-map__world{position:absolute;left:0;top:0;transform-origin:0 0}
+/* Solo durante el gesto: con will-change fijo el navegador escala una captura
+   del texto al 100 % y al acercarse se ve borroso. Al soltar se vuelve a pintar nítido. */
+.node-map.is-moving .node-map__world{will-change:transform}
+.node-map__world .map-node,.node-map__world .map-note{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 .node-map__edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
 .node-edge__hit{fill:none;stroke:transparent;stroke-width:16;pointer-events:stroke;cursor:pointer}
 .node-edge__line{fill:none;stroke-width:2;pointer-events:none;transition:stroke-width .15s}
